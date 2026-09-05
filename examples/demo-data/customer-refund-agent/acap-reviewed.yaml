@@ -1,0 +1,197 @@
+schema_version: '0.1'
+acap_id: customer-refund-agent-reviewed
+status: reviewed
+generated_at: '2026-07-30T12:00:00+00:00'
+reviewed_at: '2026-07-30T14:00:00+00:00'
+reviewed_by:
+  value: Governance Review Team
+  provenance: human_decision
+system:
+  system_id: customer-refund-agent
+  deployment_id: local-test
+  environment: local
+  framework:
+    value:
+      langchain: 1.2.10
+      langchain-core: 1.2.17
+      langgraph: 1.0.10
+    provenance: code_discovery
+  purpose:
+    value: Customer refund processing agent for local test use.
+    provenance: human_decision
+  owner:
+    value: Refund Operations / governance-poc developer
+    provenance: human_decision
+content_policy:
+  raw_prompts: false
+  raw_outputs: false
+  tool_values: sanitized_summary
+agents:
+- agent_id: refund-agent-main
+  discovered: true
+  framework: langchain.create_agent on LangGraph
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: Q1_intended_purpose + Q3_allowed_actions
+  provenance: code_discovery
+models:
+- provider:
+    value: openrouter
+    provenance: code_discovery
+  name:
+    value: qwen/qwen-2.5-7b-instruct
+    provenance: code_discovery
+  observed_names:
+    value:
+    - qwen/qwen-2.5-7b-instruct
+    provenance: runtime_event
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: Q3_model_authorization
+    scope: local-test only
+prompts:
+- template_id: system_prompt
+  template_hash:
+    value: sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
+    provenance: code_discovery
+  length_chars: 800
+  content_capture: hash
+tools:
+- name: lookup_order
+  discovered: true
+  observed: true
+  description_hash:
+    value: sha256:aa11bb22cc33dd44
+    provenance: code_discovery
+  proposed_action_type:
+    value: read
+    provenance: tool_override
+  proposed_external_side_effect:
+    value: false
+    provenance: tool_override
+  proposed_reversible:
+    value: true
+    provenance: tool_override
+  proposed_data_classes:
+    value: [order]
+    provenance: tool_override
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: Q3_allowed_actions
+  approval:
+    required:
+      value: false
+      provenance: human_decision
+      basis: Q5_approval_required
+- name: check_eligibility
+  discovered: true
+  observed: true
+  description_hash:
+    value: sha256:bb22cc33dd44ee55
+    provenance: code_discovery
+  proposed_action_type:
+    value: read
+    provenance: tool_override
+  proposed_external_side_effect:
+    value: false
+    provenance: tool_override
+  proposed_reversible:
+    value: true
+    provenance: tool_override
+  proposed_data_classes:
+    value: [order, policy]
+    provenance: tool_override
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: Q3_allowed_actions
+  approval:
+    required:
+      value: false
+      provenance: human_decision
+      basis: Q5_approval_required
+- name: refund_execute
+  discovered: true
+  observed: true
+  description_hash:
+    value: sha256:cc33dd44ee55ff66
+    provenance: code_discovery
+  proposed_action_type:
+    value: write
+    provenance: tool_override
+  proposed_external_side_effect:
+    value: true
+    provenance: tool_override
+  proposed_reversible:
+    value: false
+    provenance: tool_override
+  proposed_data_classes:
+    value: [financial, order]
+    provenance: tool_override
+  proposed_target:
+    value: payment_gateway
+    provenance: tool_override
+  authorization:
+    value: allowed_with_approval
+    provenance: human_decision
+    basis: Q3_allowed_actions + Q5_approval_boundary
+  approval:
+    required:
+      value: true
+      provenance: human_decision
+      basis: Q5_approval_boundary
+    policy:
+      provenance: human_decision
+      rules:
+      - a check_eligibility tool event must exist earlier in the same session
+      - the refund must be for an eligible order verified by the system
+- name: send_notification
+  discovered: true
+  observed: true
+  description_hash:
+    value: sha256:dd44ee55ff667788
+    provenance: code_discovery
+  proposed_action_type:
+    value: communicate
+    provenance: tool_override
+  proposed_external_side_effect:
+    value: true
+    provenance: tool_override
+  proposed_reversible:
+    value: true
+    provenance: tool_override
+  proposed_data_classes:
+    value: [contact]
+    provenance: tool_override
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: Q3_allowed_actions
+  approval:
+    required:
+      value: false
+      provenance: human_decision
+      basis: Q5_approval_required
+prohibited_actions:
+  provenance: human_decision
+  items:
+  - id: P1
+    action: Execute a refund without prior eligibility verification
+    detected_by_rule: R_write_no_approval
+  - id: P2
+    action: Process refund for ineligible order
+    detected_by_rule: null
+    note: no eligibility-validation rule implemented yet
+reassess_when:
+  normalization_status: raw_union
+  items:
+  - tool_added
+  - model_changed
+  - prompt_changed
+  - approval_logic_changed
+  - payment_gateway_changed
+  - real_financial_data
+review_questions: []

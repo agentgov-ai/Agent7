@@ -1,0 +1,83 @@
+name: Python SDK CI
+
+on:
+  push:
+    paths:
+      - "sdk-python/**"
+      - "tests/**"
+      - ".github/workflows/python-sdk-ci.yml"
+  pull_request:
+    paths:
+      - "sdk-python/**"
+      - "tests/**"
+      - ".github/workflows/python-sdk-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  sdk:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install test and build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine pytest
+          python -m pip install -e "./sdk-python[all]"
+
+      - name: Run tests
+        run: python -m pytest tests
+
+      - name: Build wheel and sdist
+        working-directory: sdk-python
+        run: python -m build
+
+      - name: Twine check
+        run: python -m twine check "sdk-python/dist/*"
+
+      - name: Clean wheel install smoke test
+        shell: bash
+        run: |
+          python -m venv /tmp/agent-governance-sdk-wheel-test
+          /tmp/agent-governance-sdk-wheel-test/bin/python -m pip install --upgrade pip
+          /tmp/agent-governance-sdk-wheel-test/bin/python -m pip install sdk-python/dist/agent_governance_sdk-*.whl
+          /tmp/agent-governance-sdk-wheel-test/bin/python -m pip install fastapi
+          /tmp/agent-governance-sdk-wheel-test/bin/python - <<'PY'
+          import json
+          import tempfile
+          from pathlib import Path
+
+          from ai_governance import GovernanceClient
+          from ai_governance.sinks import HttpSink, JsonlSink
+          import ai_governance.adapters.anthropic
+          import ai_governance.adapters.fastapi
+          import ai_governance.adapters.openai
+
+          path = Path(tempfile.gettempdir()) / "agent-governance-sdk-ci-smoke.jsonl"
+          path.unlink(missing_ok=True)
+          gov = GovernanceClient(system_id="ci-smoke", jsonl_path=path)
+          tool = gov.tool(name="refund_lookup", action_type="read")(
+              lambda order_id: {"order_id": order_id, "status": "ok"}
+          )
+          with gov.trace(name="smoke", session_id="ci-session", user_id="ci-user"):
+              tool("ORD-1")
+
+          events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+          assert len(events) == 4
+          assert events[0]["event_type"] == "chain_start"
+          assert any(event["event_type"] == "tool_end" for event in events)
+          assert JsonlSink is not None
+          assert HttpSink is not None
+          print("SMOKE_OK", len(events))
+          PY

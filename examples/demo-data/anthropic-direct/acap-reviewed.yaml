@@ -1,0 +1,52 @@
+schema_version: '0.1'
+acap_id: anthropic-direct-agent-reviewed
+status: reviewed
+generated_at: '2026-08-15T00:00:00+00:00'
+reviewed_at: '2026-08-15T00:00:00+00:00'
+reviewed_by:
+  value: Governance Demo Seed
+  provenance: human_decision
+system:
+  system_id: anthropic-direct-agent
+  deployment_id: local-test
+  environment: local
+  framework:
+    value:
+      ai_governance: 0.1
+      anthropic: optional
+    provenance: code_discovery
+  purpose:
+    value: Direct Anthropic SDK wrapper demo with hashed prompt and response evidence.
+    provenance: human_decision
+  owner:
+    value: Governance demo
+    provenance: human_decision
+content_policy:
+  raw_prompts: false
+  raw_outputs: false
+  tool_values: sanitized_summary
+agents:
+- agent_id: anthropic-direct-agent
+  discovered: true
+  framework: direct Anthropic SDK wrapper
+  authorization:
+    value: allowed
+    provenance: human_decision
+models:
+- provider:
+    value: anthropic
+    provenance: runtime_event
+  name:
+    value: claude-3-5-sonnet-latest
+    provenance: runtime_event
+  authorization:
+    value: allowed
+    provenance: human_decision
+tools: []
+prohibited_actions:
+  provenance: human_decision
+  items: []
+reassess_when:
+  items:
+  - model_changed
+  - prompt_changed

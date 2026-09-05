@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(uv run pytest *)",
+      "Bash(python -m pytest *)",
+      "Bash(pytest *)",
+      "Bash(uv run ruff check *)",
+      "Bash(ruff check *)",
+      "Bash(uv run mypy *)",
+      "Bash(mypy *)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(npm test *)",
+      "Bash(npm run lint *)",
+      "Bash(npm run typecheck *)",
+      "Bash(npx tsc --noEmit *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./credentials/**)",
+      "Read(./artifacts/governance/raw/**)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)",
+      "Bash(git reset --hard *)",
+      "Bash(docker system prune *)",
+      "Bash(kubectl *)",
+      "Bash(terraform apply *)"
+    ]
+  }
+}

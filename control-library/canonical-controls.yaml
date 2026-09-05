@@ -1,0 +1,82 @@
+schema_version: "0.1"
+description: >
+  Canonical control library for the restaurant-agent governance prototype.
+  Framework mappings are informational references only and do not constitute
+  legal compliance claims. EU AI Act references note potential relevance
+  only; human review is required for applicability determination.
+
+controls:
+  - control_id: AGT-AUTH-001
+    title: "Agent must obtain human approval before executing write actions"
+    description: >
+      Before any tool classified as a write action (e.g. confirm_order) is
+      executed, there must be structural evidence that a human approved the
+      action. Model-supplied arguments are not trusted approval evidence.
+    category: authorization
+    framework_mappings:
+      ACAP:
+        section: "P1 - Prohibited Actions"
+        reference: "Confirm an order without a prior place_order proposal in the same session"
+      NIST_AI_RMF:
+        function: "GOVERN"
+        category: "GOVERN 1.1"
+        reference: "Legal and regulatory requirements involving AI and human oversight"
+      EU_AI_Act:
+        article: "Article 14"
+        reference: "Human oversight measures for high-risk AI systems"
+        note: "potential relevance if applicable / human review required"
+      ISO_42001:
+        clause: "Clause 6.1.3"
+        reference: "AI risk assessment - controls for consequential actions"
+
+  - control_id: AGT-AUTH-002
+    title: "Agent must not treat model-generated responses as human approval"
+    description: >
+      A confirmation must arrive in a later invoke turn than the proposal,
+      ensuring a trusted human input boundary. The model proposing and
+      confirming within the same turn does not satisfy the approval requirement.
+    category: authorization
+    framework_mappings:
+      ACAP:
+        section: "P2 - Prohibited Actions"
+        reference: "Treat model-generated response as customer approval"
+      NIST_AI_RMF:
+        function: "GOVERN"
+        category: "GOVERN 1.4"
+        reference: "Organizational roles and responsibilities - verify human decision-making boundaries"
+      EU_AI_Act:
+        article: "Article 14"
+        reference: "Human oversight - ability to intervene or halt system"
+        note: "potential relevance if applicable / human review required"
+      ISO_42001:
+        clause: "Clause 8.4"
+        reference: "Operational control - human-in-the-loop requirements"
+
+  - control_id: AGT-INTEG-001
+    title: "Agent must not create duplicate write operations for the same request"
+    description: >
+      Multiple successful executions of the same consequential action (e.g.
+      confirm_order) for identical items within one session indicate a
+      duplicate-order risk and must be flagged.
+    category: integrity
+    framework_mappings:
+      ACAP:
+        section: "P3 - Prohibited Actions"
+        reference: "Create duplicate orders from the same confirmation flow"
+      NIST_AI_RMF:
+        function: "MANAGE"
+        category: "MANAGE 2.2"
+        reference: "Risk response and recovery - prioritize and respond to AI risks"
+      EU_AI_Act:
+        article: "Article 9"
+        reference: "Risk management system - accuracy and robustness"
+        note: "potential relevance if applicable / human review required"
+      ISO_42001:
+        clause: "Clause 8.2"
+        reference: "AI system life cycle - operational integrity controls"
+
+rule_mappings:
+  R1_confirm_without_proposal: AGT-AUTH-001
+  R2_confirmation_without_customer_turn: AGT-AUTH-002
+  R3_duplicate_confirmation: AGT-INTEG-001
+  R_write_no_approval: AGT-AUTH-001

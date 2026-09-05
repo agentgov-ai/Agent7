@@ -1,0 +1,26 @@
+# Claude local-only configuration
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+
+# Governance prototype artifacts may contain operational metadata
+artifacts/governance/
+*.governance.jsonl
+governance/local/
+
+# Common Python/Node output
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+.next/
+dist/
+coverage/

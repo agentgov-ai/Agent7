@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AgentGov - AI Governance Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- ── Sidebar ──────────────────────────────────────── -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">AgentGov</div>
+        <select id="systemSelector" class="sidebar-select" aria-label="Select system">
+          <option value="">Loading...</option>
+        </select>
+        <nav class="sidebar-nav">
+          <button type="button" class="nav-item active" data-tab="overview">Overview</button>
+          <button type="button" class="nav-item" data-tab="discovery">Discovery</button>
+          <button type="button" class="nav-item" data-tab="acap">ACAP</button>
+          <button type="button" class="nav-item" data-tab="evidence">Evidence</button>
+          <button type="button" class="nav-item" data-tab="findings">Findings</button>
+          <button type="button" class="nav-item" data-tab="assessment">Assessment</button>
+          <button type="button" class="nav-item" data-tab="settings">Settings</button>
+        </nav>
+        <div class="sidebar-footer">
+          <span class="sidebar-status" id="sidebarStatus">Loading</span>
+        </div>
+      </aside>
+
+      <!-- ── Main content ─────────────────────────────────── -->
+      <main class="main-content">
+        <div id="errorBanner" class="error-banner hidden" role="alert"></div>
+
+        <!-- ═══ Tab 1: Overview ═══ -->
+        <div id="tab-overview" class="tab-panel active">
+          <div class="tab-header">
+            <div><h1>Overview</h1><p class="tab-subtitle">Executive summary for the selected system</p></div>
+          </div>
+
+          <section class="kpi-strip" aria-label="Key indicators">
+            <div class="kpi-card" id="kpiStatusCard"><span class="kpi-label">Governance Status</span><span id="kpiStatus" class="kpi-value">-</span><div class="kpi-icon" id="kpiStatusIcon"></div></div>
+            <div class="kpi-card accent-info" id="kpiRiskCard"><span class="kpi-label">Risk Level</span><span id="kpiRisk" class="kpi-value">-</span></div>
+            <div class="kpi-card accent-info"><span class="kpi-label">Evidence Events</span><strong id="kpiEvents" class="kpi-number">-</strong></div>
+            <div class="kpi-card" id="kpiFindingsCard"><span class="kpi-label">Open Findings</span><strong id="kpiFindings" class="kpi-number">-</strong><div class="kpi-icon" id="kpiFindingsIcon"></div></div>
+            <div class="kpi-card" id="kpiControlsCard"><span class="kpi-label">Failed Controls</span><strong id="kpiControls" class="kpi-number">-</strong><div class="kpi-icon" id="kpiControlsIcon"></div></div>
+            <div class="kpi-card" id="kpiConfidenceCard"><span class="kpi-label">Evidence Confidence</span><span id="kpiConfidence" class="kpi-value">-</span><div class="kpi-icon" id="kpiConfidenceIcon"></div></div>
+          </section>
+
+          <div class="card-grid-2">
+            <div class="card">
+              <div class="card-head"><h2>System</h2></div>
+              <dl class="meta-grid">
+                <div><dt>System ID</dt><dd id="systemId">-</dd></div>
+                <div><dt>Deployment</dt><dd id="systemDeployment">-</dd></div>
+                <div><dt>Environment</dt><dd id="systemEnvironment">-</dd></div>
+                <div><dt>Owner</dt><dd id="systemOwner">-</dd></div>
+                <div class="wide"><dt>Purpose</dt><dd id="systemPurpose">-</dd></div>
+              </dl>
+            </div>
+            <div class="card">
+              <div class="card-head"><h2>Reviewed ACAP</h2><span id="acapStatus" class="badge">-</span></div>
+              <dl class="meta-grid">
+                <div><dt>ACAP ID</dt><dd id="acapId">-</dd></div>
+                <div><dt>Review</dt><dd id="acapReview">-</dd></div>
+                <div><dt>Approval Tools</dt><dd id="acapApprovalTools">-</dd></div>
+                <div><dt>Prohibited Actions</dt><dd id="acapProhibitedCount">-</dd></div>
+              </dl>
+            </div>
+          </div>
+
+          <div class="card" id="auditStatusPanel">
+            <div class="card-head"><h2>Audit Status</h2><span id="auditStatusBadge" class="badge">-</span></div>
+            <p id="auditNextAction" class="body-text" style="padding:14px 20px;margin:0">-</p>
+          </div>
+
+          <div class="card" id="workflowPanel">
+            <div class="card-head"><h2>Governance Loop</h2></div>
+            <div class="workflow-steps" id="workflowSteps">
+              <div class="wf-step" id="wfScan"><span class="wf-dot"></span><span class="wf-label">Scanner Suggested</span></div>
+              <div class="wf-arrow"></div>
+              <div class="wf-step" id="wfReview"><span class="wf-dot"></span><span class="wf-label">Human Reviewed</span></div>
+              <div class="wf-arrow"></div>
+              <div class="wf-step" id="wfAcap"><span class="wf-dot"></span><span class="wf-label">ACAP Generated</span></div>
+              <div class="wf-arrow"></div>
+              <div class="wf-step" id="wfRules"><span class="wf-dot"></span><span class="wf-label">Runtime Rules Run</span></div>
+              <div class="wf-arrow"></div>
+              <div class="wf-step" id="wfFindings"><span class="wf-dot"></span><span class="wf-label">Findings Detected</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Tab 2: Discovery ═══ -->
+        <div id="tab-discovery" class="tab-panel">
+          <div class="tab-header">
+            <div><h1>Capability Discovery</h1><p class="tab-subtitle">Scanner-discovered capabilities awaiting review</p></div>
+          </div>
+
+          <div class="card" id="discoveryUploadPanel">
+            <div class="card-head"><h2>Upload Discovery</h2></div>
+            <div class="upload-form">
+              <input type="file" id="discoveryFile" accept=".json" />
+              <input type="text" id="discoverySystemId" placeholder="System ID" class="form-input" />
+              <button type="button" id="btnUploadDiscovery" class="btn-primary">Upload</button>
+            </div>
+          </div>
+
+          <div class="card" id="scanSummaryPanel" style="display:none">
+            <div class="card-head"><h2>Scan Summary</h2><span id="scanUploadId" class="badge">-</span></div>
+            <dl class="meta-grid" id="scanSummaryGrid">
+              <div><dt>Files Scanned</dt><dd id="scanFilesScanned">-</dd></div>
+              <div><dt>Functions Seen</dt><dd id="scanFunctionsSeen">-</dd></div>
+              <div><dt>Candidates Found</dt><dd id="scanCandidatesFound">-</dd></div>
+              <div><dt>Model Surface</dt><dd id="scanModelSurface">-</dd></div>
+              <div><dt>High Risk</dt><dd id="scanHighRisk">-</dd></div>
+              <div><dt>Medium Risk</dt><dd id="scanMediumRisk">-</dd></div>
+              <div><dt>Low Risk</dt><dd id="scanLowRisk">-</dd></div>
+              <div><dt>Uploaded</dt><dd id="scanUploadedAt">-</dd></div>
+            </dl>
+          </div>
+
+          <div class="risk-filters" id="riskFilters" style="display:none">
+            <button type="button" class="filter-btn active" data-risk="all">All</button>
+            <button type="button" class="filter-btn" data-risk="high">High</button>
+            <button type="button" class="filter-btn" data-risk="medium">Medium</button>
+            <button type="button" class="filter-btn" data-risk="low">Low</button>
+            <button type="button" class="filter-btn" data-risk="pending">Pending</button>
+            <button type="button" class="filter-btn" data-risk="reviewed">Reviewed</button>
+          </div>
+
+          <div id="capabilityCards"></div>
+
+          <div class="card" id="modelSurfacePanel" style="display:none">
+            <div class="card-head"><h2>Model Usage Surface</h2></div>
+            <div class="table-wrap">
+              <table class="gov-table">
+                <thead><tr><th>Function</th><th>Provider</th><th>File</th><th>Line</th><th>Call Chain</th></tr></thead>
+                <tbody id="modelSurfaceBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Tab 3: ACAP ═══ -->
+        <div id="tab-acap" class="tab-panel">
+          <div class="tab-header">
+            <div><h1>ACAP</h1><p class="tab-subtitle">Authorization Contract for Agent Permissions</p></div>
+          </div>
+
+          <div class="card" id="acapPreviewPanel" style="display:none">
+            <div class="card-head">
+              <h2>ACAP Preview</h2>
+              <button type="button" id="btnGenerateAcap" class="btn-primary">Generate ACAP Version</button>
+            </div>
+            <div id="acapPreviewWarning" class="warning-banner" style="display:none"></div>
+            <dl class="meta-grid" id="acapPreviewGrid">
+              <div><dt>Approved</dt><dd id="previewApproved">0</dd></div>
+              <div><dt>Denied</dt><dd id="previewDenied">0</dd></div>
+              <div><dt>Pending</dt><dd id="previewPending">0</dd></div>
+              <div><dt>False Positives</dt><dd id="previewFP">0</dd></div>
+            </dl>
+            <div id="acapPreviewAllowed"></div>
+            <div id="acapPreviewDeniedList"></div>
+          </div>
+
+          <div class="card" id="acapVersionsPanel" style="display:none">
+            <div class="card-head">
+              <h2>Version History</h2>
+              <button type="button" id="btnRunAcapRules" class="btn-secondary" disabled>Run ACAP Rules</button>
+            </div>
+            <div id="acapVersionsList"></div>
+            <p id="runAcapHint" class="hint-text" style="display:none">Generate an ACAP version first.</p>
+            <p id="runAcapResult" class="result-text" style="display:none"></p>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Tool Authorization</h2><span class="badge" id="draftStatus">-</span></div>
+            <div class="table-wrap">
+              <table class="gov-table" id="toolReviewTable">
+                <thead><tr><th>Tool</th><th>Action Type</th><th>Approval</th><th>Observed Uses</th><th>Authorization</th></tr></thead>
+                <tbody id="toolReviewBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" id="manifestUsagePanel" style="display:none">
+            <div class="card-head"><h2>Instrument from Manifest</h2></div>
+            <pre class="code-block"><code>from ai_governance import GovernanceClient
+gov = GovernanceClient.from_config("governance.yaml")
+gov.instrument_from_config()</code></pre>
+          </div>
+
+          <div class="card explainer" id="governanceExplainer">
+            <p>Scanner output is not authorization. Only reviewed capabilities enter ACAP. Runtime findings compare observed behavior against the active ACAP version.</p>
+          </div>
+        </div>
+
+        <!-- ═══ Tab 4: Evidence ═══ -->
+        <div id="tab-evidence" class="tab-panel">
+          <div class="tab-header">
+            <div><h1>Runtime Evidence</h1><p class="tab-subtitle">Evidence coverage and runtime event analysis</p></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Evidence Coverage</h2><span id="coverageEventCount" class="badge">-</span></div>
+            <div class="table-wrap">
+              <table class="gov-table" id="coverageTable">
+                <thead><tr><th>Field</th><th>Status</th><th>Presence</th><th>Note</th></tr></thead>
+                <tbody id="coverageBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Tab 5: Findings ═══ -->
+        <div id="tab-findings" class="tab-panel">
+          <div class="tab-header">
+            <div><h1>Findings</h1><p class="tab-subtitle">Governance violations and rule results</p></div>
+          </div>
+
+          <div class="findings-layout">
+            <aside class="card findings-list-card">
+              <div class="card-head"><h2>Finding List</h2></div>
+              <div id="findingsList" class="findings-list"></div>
+            </aside>
+
+            <section class="card findings-detail-card">
+              <div class="card-head" id="detailPanelHead">
+                <h2 id="detailTitle">Selected Finding</h2>
+                <span id="severityBadge" class="badge">-</span>
+              </div>
+              <dl class="meta-grid">
+                <div><dt>Rule</dt><dd id="detailRule">-</dd></div>
+                <div><dt>Session</dt><dd id="detailSession">-</dd></div>
+                <div><dt>ACAP</dt><dd id="detailAcap">-</dd></div>
+                <div><dt>Outcome</dt><dd id="detailOutcome">-</dd></div>
+              </dl>
+              <section class="subsection"><h3>What Happened</h3><p id="detailDescription" class="body-text">-</p></section>
+              <section class="subsection"><h3>Why It Matters</h3><p id="detailWhyMatters" class="body-text">-</p></section>
+              <section class="subsection"><h3>Recommendation</h3><p id="detailRecommendation" class="body-text">-</p></section>
+              <section class="subsection" id="controlSection">
+                <h3>Failed Control</h3>
+                <dl class="meta-grid"><div><dt>Control ID</dt><dd id="detailControlId">-</dd></div><div><dt>Control Title</dt><dd id="detailControlTitle">-</dd></div></dl>
+              </section>
+              <section class="subsection" id="frameworkSection"><h3>Framework Mappings</h3><div id="frameworkMappings" class="framework-grid"></div></section>
+              <section class="subsection"><h3>Linked Evidence Event IDs</h3><div id="eventIds" class="id-list"></div></section>
+              <section class="subsection"><h3>Finding Timeline</h3><ol id="timeline" class="timeline"></ol></section>
+            </section>
+          </div>
+        </div>
+
+        <!-- ═══ Tab 6: Assessment ═══ -->
+        <div id="tab-assessment" class="tab-panel">
+          <div class="tab-header">
+            <div><h1>Assessment</h1><p class="tab-subtitle">Governance assessment and framework analysis</p></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Latest Assessment</h2><span id="overallStatusBadge" class="badge">-</span></div>
+            <div id="assessmentContent">
+              <dl class="meta-grid">
+                <div><dt>Assessment ID</dt><dd id="assessmentId">-</dd></div>
+                <div><dt>Assessed At</dt><dd id="assessmentTime">-</dd></div>
+                <div><dt>Evidence Confidence</dt><dd id="assessmentConfidence">-</dd></div>
+                <div><dt>Failed Controls</dt><dd id="assessmentControls">-</dd></div>
+              </dl>
+              <div class="card-grid-2 nested">
+                <div class="subsection"><h3>Framework Status</h3><table class="gov-table" id="frameworkStatusTable"><thead><tr><th>Framework</th><th>Status</th></tr></thead><tbody id="frameworkStatusBody"></tbody></table></div>
+                <div class="subsection"><h3>Recommended Actions</h3><ul id="recommendedActions" class="action-list"></ul></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-grid-2">
+            <div class="card">
+              <div class="card-head"><h2>Risk Profile</h2></div>
+              <dl class="meta-grid">
+                <div class="wide"><dt>Use Case</dt><dd id="riskUseCase">-</dd></div>
+                <div><dt>Environment</dt><dd id="riskEnvironment">-</dd></div>
+                <div><dt>Authority Level</dt><dd id="riskAuthority">-</dd></div>
+                <div><dt>Autonomy Level</dt><dd id="riskAutonomy">-</dd></div>
+                <div><dt>Data Sensitivity</dt><dd id="riskDataSensitivity">-</dd></div>
+                <div><dt>Side Effects</dt><dd id="riskSideEffects">-</dd></div>
+                <div><dt>Approval Model</dt><dd id="riskApprovalModel">-</dd></div>
+                <div><dt>Jurisdiction</dt><dd id="riskJurisdiction">-</dd></div>
+              </dl>
+            </div>
+            <div class="card">
+              <div class="card-head"><h2>Framework Applicability</h2></div>
+              <div class="table-wrap">
+                <table class="gov-table" id="applicabilityTable"><thead><tr><th>Framework</th><th>Applicable</th><th>Reason</th></tr></thead><tbody id="applicabilityBody"></tbody></table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Tab 7: Settings ═══ -->
+        <div id="tab-settings" class="tab-panel">
+          <div class="tab-header">
+            <div><h1>Settings</h1><p class="tab-subtitle">System controls and debug tools</p></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Actions</h2></div>
+            <div class="settings-actions">
+              <button type="button" id="demoResetBtn" class="btn-secondary">Reset Demo</button>
+              <button type="button" id="runAssessmentBtn" class="btn-primary">Run Assessment</button>
+              <button type="button" id="exportReportBtn" class="btn-secondary">Export Report</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Edit capability modal -->
+    <div id="editCapabilityModal" class="modal-overlay hidden">
+      <div class="modal-dialog">
+        <div class="card-head"><h2>Edit Capability</h2><button type="button" id="editModalClose" class="modal-close">&times;</button></div>
+        <form id="editCapabilityForm" class="edit-form">
+          <input type="hidden" id="editCapId" />
+          <label>Action Type<select id="editActionType"><option value="">-- keep --</option><option value="read">read</option><option value="write">write</option><option value="delete">delete</option><option value="communicate">communicate</option><option value="execute">execute</option><option value="unknown">unknown</option></select></label>
+          <label>Risk<select id="editRisk"><option value="">-- keep --</option><option value="high">high</option><option value="medium">medium</option><option value="low">low</option></select></label>
+          <label>Data Classes (comma-separated)<input type="text" id="editDataClasses" placeholder="e.g. financial, pii" /></label>
+          <label class="checkbox-label"><input type="checkbox" id="editApprovalRequired" /> Approval Required</label>
+          <label class="checkbox-label"><input type="checkbox" id="editSideEffect" /> External Side Effect</label>
+          <div class="form-actions"><button type="submit" class="btn-primary">Save Changes</button><button type="button" id="editModalCancel" class="btn-secondary">Cancel</button></div>
+        </form>
+      </div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

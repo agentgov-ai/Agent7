@@ -1,0 +1,36 @@
+# This file contains only facts that automatic discovery cannot prove.
+# Claude should generate a draft using the actual tool names in the repository.
+
+schema_version: "0.1"
+tools:
+  menu_lookup:
+    action_type: read
+    external_side_effect: false
+    reversible: true
+    data_classes: [public_menu]
+
+  create_reservation:
+    action_type: write
+    external_side_effect: true
+    reversible: true
+    data_classes: [contact, reservation]
+    approval:
+      required: false
+
+  cancel_reservation:
+    action_type: write
+    external_side_effect: true
+    reversible: false
+    data_classes: [contact, reservation]
+    approval:
+      required: true
+      condition: customer_confirmation
+
+  charge_payment:
+    action_type: execute
+    external_side_effect: true
+    reversible: false
+    data_classes: [payment]
+    approval:
+      required: true
+      condition: explicit_checkout_confirmation

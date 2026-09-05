@@ -1,0 +1,52 @@
+schema_version: '0.1'
+acap_id: openai-direct-agent-reviewed
+status: reviewed
+generated_at: '2026-08-15T00:00:00+00:00'
+reviewed_at: '2026-08-15T00:00:00+00:00'
+reviewed_by:
+  value: Governance Demo Seed
+  provenance: human_decision
+system:
+  system_id: openai-direct-agent
+  deployment_id: local-test
+  environment: local
+  framework:
+    value:
+      ai_governance: 0.1
+      openai: optional
+    provenance: code_discovery
+  purpose:
+    value: Direct OpenAI SDK wrapper demo with hashed prompt and response evidence.
+    provenance: human_decision
+  owner:
+    value: Governance demo
+    provenance: human_decision
+content_policy:
+  raw_prompts: false
+  raw_outputs: false
+  tool_values: sanitized_summary
+agents:
+- agent_id: openai-direct-agent
+  discovered: true
+  framework: direct OpenAI SDK wrapper
+  authorization:
+    value: allowed
+    provenance: human_decision
+models:
+- provider:
+    value: openai
+    provenance: runtime_event
+  name:
+    value: gpt-4.1-mini
+    provenance: runtime_event
+  authorization:
+    value: allowed
+    provenance: human_decision
+tools: []
+prohibited_actions:
+  provenance: human_decision
+  items: []
+reassess_when:
+  items:
+  - model_changed
+  - prompt_changed

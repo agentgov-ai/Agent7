@@ -1,0 +1,397 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/ai-governance/governance-event.schema.json",
+  "title": "Governance Evidence Event",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "event_id",
+    "timestamp",
+    "system_id",
+    "deployment_id",
+    "environment",
+    "event_type",
+    "trace_id",
+    "span_id",
+    "source",
+    "outcome"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "system_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deployment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "environment": {
+      "type": "string",
+      "minLength": 1
+    },
+    "session_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "chain_start",
+        "chain_end",
+        "chain_error",
+        "agent_action",
+        "agent_finish",
+        "llm_start",
+        "llm_end",
+        "llm_error",
+        "tool_start",
+        "tool_end",
+        "tool_error",
+        "retriever_start",
+        "retriever_end",
+        "retriever_error",
+        "approval_requested",
+        "approval_decision",
+        "custom"
+      ]
+    },
+    "trace_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "span_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parent_span_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "library": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "library_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "actor": {
+      "type": "object",
+      "properties": {
+        "agent_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "user_id_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "on_behalf_of_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "identity_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "component": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requested_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resolved_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "prompt": {
+      "type": "object",
+      "properties": {
+        "template_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "template_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "content_capture": {
+          "type": "string",
+          "enum": [
+            "none",
+            "hash",
+            "sanitized",
+            "full"
+          ]
+        },
+        "message_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "tool": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "action_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "read",
+            "write",
+            "communicate",
+            "execute",
+            "unknown",
+            null
+          ]
+        },
+        "arguments_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sanitized_arguments": {},
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "external_side_effect": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "reversible": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "classifications": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "destinations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "approval": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "granted": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "approver_id_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "policy_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "outcome": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "started",
+            "success",
+            "error",
+            "unknown"
+          ]
+        },
+        "duration_ms": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "error_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "input_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "output_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "total_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+    "attributes": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

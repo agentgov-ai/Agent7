@@ -1,0 +1,33 @@
+# Optional milestone only. Use an OpenTelemetry Collector Contrib distribution.
+# Bind OTLP HTTP to all interfaces so local Docker/host boundary setups can
+# reach it; keep prompt/output content disabled in the application exporter.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+  batch: {}
+  attributes/governance:
+    actions:
+      - key: governance.prototype
+        value: restaurant-agent
+        action: upsert
+
+exporters:
+  debug:
+    verbosity: normal
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/governance, batch]
+      exporters: [debug]

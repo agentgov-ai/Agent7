@@ -1,0 +1,102 @@
+schema_version: '0.1'
+acap_id: custom-python-refund-agent-reviewed
+status: reviewed
+generated_at: '2026-08-15T00:00:00+00:00'
+reviewed_at: '2026-08-15T00:00:00+00:00'
+reviewed_by:
+  value: Governance Demo Seed
+  provenance: human_decision
+system:
+  system_id: custom-python-refund-agent
+  deployment_id: local-test
+  environment: local
+  framework:
+    value:
+      ai_governance: 0.1
+    provenance: code_discovery
+  purpose:
+    value: Custom Python refund workflow demo using GovernanceClient.tool and trace.
+    provenance: human_decision
+  owner:
+    value: Governance demo
+    provenance: human_decision
+content_policy:
+  raw_prompts: false
+  raw_outputs: false
+  tool_values: sanitized_summary
+agents:
+- agent_id: custom-refund-agent-main
+  discovered: true
+  framework: direct Python functions
+  authorization:
+    value: allowed
+    provenance: human_decision
+tools:
+- name: refund_lookup
+  discovered: true
+  observed: true
+  proposed_action_type:
+    value: read
+    provenance: runtime_event
+  proposed_external_side_effect:
+    value: false
+    provenance: runtime_event
+  proposed_data_classes:
+    value: [order]
+    provenance: runtime_event
+  authorization:
+    value: allowed
+    provenance: human_decision
+  approval:
+    required:
+      value: false
+      provenance: human_decision
+- name: refund_execute
+  discovered: true
+  observed: true
+  proposed_action_type:
+    value: write
+    provenance: runtime_event
+  proposed_external_side_effect:
+    value: true
+    provenance: runtime_event
+  proposed_data_classes:
+    value: [financial, order]
+    provenance: runtime_event
+  authorization:
+    value: allowed_with_approval
+    provenance: human_decision
+  approval:
+    required:
+      value: true
+      provenance: human_decision
+- name: send_email
+  discovered: true
+  observed: true
+  proposed_action_type:
+    value: communicate
+    provenance: runtime_event
+  proposed_external_side_effect:
+    value: true
+    provenance: runtime_event
+  proposed_data_classes:
+    value: [contact]
+    provenance: runtime_event
+  authorization:
+    value: allowed
+    provenance: human_decision
+  approval:
+    required:
+      value: false
+      provenance: human_decision
+prohibited_actions:
+  provenance: human_decision
+  items:
+  - id: P1
+    action: Execute refunds without approval evidence
+    detected_by_rule: null
+reassess_when:
+  items:
+  - tool_added
+  - model_changed
+  - approval_logic_changed

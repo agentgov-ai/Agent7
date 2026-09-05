@@ -1,0 +1,526 @@
+schema_version: '0.1'
+acap_id: restaurant-agent-local-reviewed
+status: reviewed
+generated_at: '2026-07-22T16:02:11.967481+00:00'
+generation_inputs:
+  discovery: artifacts\governance\discovery.json
+  overrides: governance-tool-overrides.yaml
+  events: artifacts\governance\events.jsonl
+  template_shape_reference: templates\restaurant-acap.example.yaml
+  draft: artifacts\governance\acap-draft.yaml
+  human_answers: artifacts\governance\acap-human-answers.yaml
+system:
+  system_id: restaurant-agent
+  deployment_id: local-test
+  environment: local
+  framework:
+    value:
+      langchain: 1.2.10
+      langchain-core: 1.2.17
+      langchain-openai: 1.1.10
+      langgraph: 1.0.10
+      faiss-cpu: 1.13.2
+      sentence-transformers: 5.2.3
+    provenance: code_discovery
+  purpose:
+    value: Restaurant ordering assistant for local test use.
+    provenance: human_decision
+  owner:
+    value: Shrey / restaurant-agent developer
+    provenance: human_decision
+content_policy:
+  raw_prompts: false
+  raw_outputs: false
+  tool_values: sanitized_summary
+agents:
+- agent_id: restaurant-agent-main
+  discovered: true
+  framework: langchain.create_agent on LangGraph
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: Q1_intended_purpose + Q3_allowed_actions
+  provenance: code_discovery
+models:
+- provider:
+    value: openrouter
+    provenance: code_discovery
+  name:
+    value: qwen/qwen-2.5-7b-instruct
+    provenance: code_discovery
+  observed_names:
+    value:
+    - qwen/qwen-2.5-7b-instruct
+    provenance: runtime_event
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: Q3_model_authorization
+    scope: local-test only
+    condition: Authorize the currently configured OpenRouter model qwen/qwen-2.5-7b-instruct for local-test scope only. Any
+      model, provider, or deployment-scope change requires reassessment.
+prompts:
+- template_id: system_prompt
+  template_hash:
+    value: sha256:d6dc9689a84e8d5b76fd9910acfb3eaff0fec91e3555aa10ffa7878e7d7a9e6a
+    provenance: code_discovery
+  length_chars: 1010
+  content_capture: hash
+- template_id: observed_message_shapes
+  distinct_shape_hashes:
+    value: 11
+    provenance: runtime_event
+  note: per-turn chat message-shape fingerprints, content never captured
+tools:
+- name: show_receipt
+  discovered: true
+  observed: true
+  description_hash:
+    value: sha256:656911d2d3deacab8557d99f773d3f1eb934a1a34165fcd7b102ee71d616f289
+    provenance: code_discovery
+  implementation:
+    value: __main__.show_receipt
+    provenance: code_discovery
+  args_schema:
+    value: null
+    provenance: code_discovery
+    note: plain function; no pydantic args schema attached
+  proposed_action_type:
+    value: read
+    provenance: tool_override
+  proposed_external_side_effect:
+    value: false
+    provenance: tool_override
+  proposed_reversible:
+    value: true
+    provenance: tool_override
+  proposed_data_classes:
+    value:
+    - public_menu
+    - order
+    provenance: tool_override
+  proposed_target:
+    value: faiss_menu_index
+    provenance: tool_override
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: 'Q3_allowed_actions: ''Show receipt/order summary'''
+  approval:
+    required:
+      value: false
+      provenance: human_decision
+      basis: Q5_approval_required
+    condition: null
+    note: read-only/local-display action; no trusted approval required for local-test scope
+  observed_usage:
+    provenance: runtime_event
+    starts: 2
+    successes: 2
+    errors: 0
+    error_types: {}
+  evidence_fields_available:
+  - action_type
+  - arguments_hash
+  - data.classifications
+  - duration_ms
+  - result_hash
+  - result_summary
+  - sanitized_arguments
+- name: place_order
+  discovered: true
+  observed: true
+  description_hash:
+    value: sha256:60077395bffb4e156ffcd3636b2f53e4854ca5390005063e86e9e88f80fb6bdd
+    provenance: code_discovery
+  implementation:
+    value: __main__.place_order
+    provenance: code_discovery
+  args_schema:
+    value: null
+    provenance: code_discovery
+    note: plain function; no pydantic args schema attached
+  proposed_action_type:
+    value: communicate
+    provenance: tool_override
+    note: closest schema-valid type; function returns an in-session string to the customer, no external channel
+  proposed_external_side_effect:
+    value: false
+    provenance: tool_override
+  proposed_reversible:
+    value: true
+    provenance: tool_override
+  proposed_data_classes:
+    value:
+    - order
+    provenance: tool_override
+  proposed_target:
+    value: null
+    provenance: unresolved
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: 'Q3_allowed_actions: ''Prepare an order proposal'''
+  approval:
+    required:
+      value: false
+      provenance: human_decision
+      basis: Q5_approval_required
+    condition: null
+    note: read-only/local-display action; no trusted approval required for local-test scope
+  observed_usage:
+    provenance: runtime_event
+    starts: 10
+    successes: 10
+    errors: 0
+    error_types: {}
+  evidence_fields_available:
+  - action_type
+  - arguments_hash
+  - data.classifications
+  - duration_ms
+  - result_hash
+  - result_summary
+  - sanitized_arguments
+- name: greet_customer
+  discovered: true
+  observed: true
+  description_hash:
+    value: sha256:77ffea7cb4db14f77aa8c87dbc158a085bc8b49cf06adc892d5c322124a8f938
+    provenance: code_discovery
+  implementation:
+    value: __main__.greet_customer
+    provenance: code_discovery
+  args_schema:
+    value: null
+    provenance: code_discovery
+    note: plain function; no pydantic args schema attached
+  proposed_action_type:
+    value: communicate
+    provenance: tool_override
+  proposed_external_side_effect:
+    value: false
+    provenance: tool_override
+  proposed_reversible:
+    value: true
+    provenance: tool_override
+  proposed_data_classes:
+    value: []
+    provenance: tool_override
+  proposed_target:
+    value: null
+    provenance: unresolved
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: 'Q3_allowed_actions: ''Greet customers and communicate local in-session greetings'''
+  approval:
+    required:
+      value: false
+      provenance: human_decision
+      basis: Q5_approval_required
+    condition: null
+    note: read-only/local-display action; no trusted approval required for local-test scope
+  observed_usage:
+    provenance: runtime_event
+    starts: 8
+    successes: 8
+    errors: 0
+    error_types: {}
+  evidence_fields_available:
+  - action_type
+  - arguments_hash
+  - duration_ms
+  - result_hash
+  - result_summary
+  - sanitized_arguments
+- name: get_user_name
+  discovered: true
+  observed: true
+  description_hash:
+    value: sha256:0b0683f9e4ed3610d227b16f5257c4cfeb3832068cc3c0f66d05068d0b2790a2
+    provenance: code_discovery
+  implementation:
+    value: __main__.get_user_name
+    provenance: code_discovery
+  args_schema:
+    value: null
+    provenance: code_discovery
+    note: plain function; no pydantic args schema attached
+  proposed_action_type:
+    value: read
+    provenance: tool_override
+  proposed_external_side_effect:
+    value: false
+    provenance: tool_override
+  proposed_reversible:
+    value: true
+    provenance: tool_override
+  proposed_data_classes:
+    value:
+    - contact
+    provenance: tool_override
+  proposed_target:
+    value: null
+    provenance: unresolved
+  authorization:
+    value: allowed_conditional
+    provenance: human_decision
+    basis: 'Q6_permitted_data: ''basic contact data only when needed'''
+    condition: collect basic contact data only when needed for the order flow
+  approval:
+    required:
+      value: false
+      provenance: human_decision
+      basis: Q5_approval_required
+    condition: null
+    note: read-only/local-display action; no trusted approval required for local-test scope
+  observed_usage:
+    provenance: runtime_event
+    starts: 7
+    successes: 7
+    errors: 0
+    error_types: {}
+  evidence_fields_available:
+  - action_type
+  - arguments_hash
+  - data.classifications
+  - duration_ms
+  - result_hash
+  - result_summary
+  - sanitized_arguments
+- name: get_menu
+  discovered: true
+  observed: true
+  description_hash:
+    value: sha256:76aeac7dab8d1a25d09dbbea591e0855bb4ceb0e01a61c2e478e4152a150d373
+    provenance: code_discovery
+  implementation:
+    value: __main__.get_menu
+    provenance: code_discovery
+  args_schema:
+    value: null
+    provenance: code_discovery
+    note: plain function; no pydantic args schema attached
+  proposed_action_type:
+    value: read
+    provenance: tool_override
+  proposed_external_side_effect:
+    value: false
+    provenance: tool_override
+  proposed_reversible:
+    value: true
+    provenance: tool_override
+  proposed_data_classes:
+    value:
+    - public_menu
+    provenance: tool_override
+  proposed_target:
+    value: faiss_menu_index
+    provenance: tool_override
+  authorization:
+    value: allowed
+    provenance: human_decision
+    basis: 'Q3_allowed_actions: ''Read menu information'''
+  approval:
+    required:
+      value: false
+      provenance: human_decision
+      basis: Q5_approval_required
+    condition: null
+    note: read-only/local-display action; no trusted approval required for local-test scope
+  observed_usage:
+    provenance: runtime_event
+    starts: 2
+    successes: 2
+    errors: 0
+    error_types: {}
+  evidence_fields_available:
+  - action_type
+  - arguments_hash
+  - data.classifications
+  - duration_ms
+  - result_hash
+  - result_summary
+  - sanitized_arguments
+- name: confirm_order
+  discovered: true
+  observed: true
+  description_hash:
+    value: sha256:f8119a467c6f1a4a253ee228d6afa4a03817a4a951c53ba11b375ad5a4aa0c02
+    provenance: code_discovery
+  implementation:
+    value: __main__.confirm_order
+    provenance: code_discovery
+  args_schema:
+    value: null
+    provenance: code_discovery
+    note: plain function; no pydantic args schema attached
+  proposed_action_type:
+    value: write
+    provenance: tool_override
+  proposed_external_side_effect:
+    value: true
+    provenance: tool_override
+  proposed_reversible:
+    value: true
+    provenance: tool_override
+    note: reversal requires manual staff removal from orders_log.json; no automated rollback function discovered
+  proposed_data_classes:
+    value:
+    - order
+    provenance: tool_override
+  proposed_target:
+    value: orders_log.json
+    provenance: tool_override
+  authorization:
+    value: allowed_with_approval
+    provenance: human_decision
+    basis: 'Q3_allowed_actions: ''Confirm an order only after trusted customer confirmation'' + Q5_approval_boundary'
+  approval:
+    required:
+      value: true
+      provenance: human_decision
+      basis: Q5_approval_boundary
+    condition: customer_confirmation
+    note: approval.required is annotation-only; approval.granted is not derived from model-supplied tool arguments. Trusted
+      approval must be established structurally by the reviewed ACAP and findings rules; see review question Q5
+    policy:
+      provenance: human_decision
+      rules:
+      - a place_order tool event must exist earlier in the same session
+      - the confirmation must arrive in a later invoke turn (trusted human input 'yes'), not the same model turn as the proposal
+      - the model-supplied tool argument response='yes' is NOT trusted approval evidence
+      known_limitations:
+      - R2 accepts any earlier-turn place_order in the session as satisfying the human-approval boundary regardless of item
+        identity; a proposal for item A is not evidence that a human approved item B (see findings.json evidence_gaps)
+  observed_usage:
+    provenance: runtime_event
+    starts: 4
+    successes: 3
+    errors: 1
+    error_types:
+      PermissionError: 1
+  evidence_fields_available:
+  - action_type
+  - approval.granted
+  - approval.required
+  - arguments_hash
+  - data.classifications
+  - duration_ms
+  - error_type
+  - result_hash
+  - result_summary
+  - sanitized_arguments
+reassess_when:
+  normalization_status: raw_union
+  items:
+  - tool_added
+  - model_changed
+  - prompt_changed
+  - approval_logic_changed
+  - external_api_changed
+  - incident
+  - new tool
+  - model change
+  - prompt change
+  - confirm_order logic change
+  - storage change
+  - payment/messaging added
+  - duplicate order
+  - approval-bypass incident
+review_questions:
+- id: Q1
+  topic: intended_purpose
+  question: 'What is this restaurant agent intended to do, and for whom? (Discovered capability: menu Q&A, order drafting,
+    order confirmation to a staff-verification log, receipt display.)'
+  fills:
+  - system.purpose
+  answered: true
+  answer_ref: artifacts\governance\acap-human-answers.yaml
+- id: Q2
+  topic: accountable_owner
+  question: Who is the accountable owner for this agent and its order log (name/role)?
+  fills:
+  - system.owner
+  answered: true
+  answer_ref: artifacts\governance\acap-human-answers.yaml
+- id: Q3
+  topic: allowed_actions
+  question: Which discovered tools are ALLOWED in normal operation? (greet_customer, get_user_name, get_menu, place_order,
+    confirm_order, show_receipt — all currently unresolved.)
+  fills:
+  - tools[*].authorization
+  answered: true
+  answer_ref: artifacts\governance\acap-human-answers.yaml
+- id: Q4
+  topic: prohibited_actions
+  question: Which actions must be PROHIBITED (e.g., confirming an order the customer never proposed, adding unrequested items,
+    any future payment/messaging capability)?
+  fills:
+  - tools[*].authorization
+  - prohibited_actions
+  answered: true
+  answer_ref: artifacts\governance\acap-human-answers.yaml
+- id: Q5
+  topic: approval_requirements
+  question: 'Should confirm_order require evidence of a prior place_order proposal AND an explicit customer ''yes'' turn in
+    the same session before it may write, while all read-only/local-display tools require no approval? (Runtime evidence:
+    event bef3e128-513d-4484-86d2-603c8916e220 shows confirm_order invoked with a model-supplied response=''yes'' argument
+    and no prior place_order tool_start in the same trace. This occurred during the controlled adversarial test s5_adversarial
+    — see artifacts/governance/scenarios/manifest.json — demonstrating the argument-derived approval signal is spoofable and
+    must not be trusted.)'
+  fills:
+  - tools[confirm_order].approval
+  answered: true
+  answer_ref: artifacts\governance\acap-human-answers.yaml
+- id: Q6
+  topic: sensitive_data
+  question: 'Which customer data may the agent process or store? (Currently observed: customer first name in-session [redacted
+    in evidence], order items in a local log. No payment, contact-detail or address capability discovered.)'
+  fills:
+  - data_policy
+  answered: true
+  answer_ref: artifacts\governance\acap-human-answers.yaml
+- id: Q7
+  topic: reassessment_triggers
+  question: Besides the defaults (tool added, model changed, prompt changed, approval logic changed, external API changed,
+    incident), what business changes require reassessment (e.g., real payment integration, real customer data, non-local deployment)?
+  fills:
+  - reassess_when
+  answered: true
+  answer_ref: artifacts\governance\acap-human-answers.yaml
+reviewed_at: '2026-07-22T16:02:54.629706+00:00'
+reviewed_by:
+  value: Shrey / restaurant-agent developer
+  provenance: human_decision
+prohibited_actions:
+  provenance: human_decision
+  items:
+  - id: P1
+    action: Confirm an order without a prior place_order proposal in the same session
+    detected_by_rule: R1_confirm_without_proposal
+  - id: P2
+    action: Treat model-generated response='yes' as customer approval
+    detected_by_rule: R2_confirmation_without_customer_turn
+    note: 'the customer''s actual text is not captured (privacy-by-default), so trust is enforced structurally: the confirmation
+      must arrive in a later invoke turn than the proposal'
+  - id: P3
+    action: Create duplicate orders from the same confirmation flow
+    detected_by_rule: R3_duplicate_confirmation
+  - id: P4
+    action: Execute real payment
+    detected_by_rule: null
+    note: no payment capability discovered in the codebase; reassess if added
+  - id: P5
+    action: Send external messages
+    detected_by_rule: null
+    note: no messaging capability discovered in the codebase; reassess if added
+data_policy:
+  provenance: human_decision
+  permitted:
+  - menu data
+  - order items
+  - quantities
+  - local test order status
+  - basic contact data only when needed

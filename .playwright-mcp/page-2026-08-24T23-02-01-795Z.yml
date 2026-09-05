@@ -1,0 +1,474 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "AgentGov" [ref=e4] [cursor=pointer]:
+        - /url: "#hero"
+      - list [ref=e5]:
+        - listitem [ref=e6]:
+          - link "Scanner" [ref=e7] [cursor=pointer]:
+            - /url: "#scanner"
+        - listitem [ref=e8]:
+          - link "ACAP" [ref=e9] [cursor=pointer]:
+            - /url: "#acap"
+        - listitem [ref=e10]:
+          - link "Monitoring" [ref=e11] [cursor=pointer]:
+            - /url: "#monitoring"
+        - listitem [ref=e12]:
+          - link "Adapters" [ref=e13] [cursor=pointer]:
+            - /url: "#adapters"
+        - listitem [ref=e14]:
+          - link "Assessment" [ref=e15] [cursor=pointer]:
+            - /url: "#assessment"
+        - listitem [ref=e16]:
+          - link "Live Dashboard" [ref=e17] [cursor=pointer]:
+            - /url: /ui/
+  - generic [ref=e20]:
+    - generic [ref=e21]: AI Governance SDK
+    - heading "Know what your AI system can do— and what it actually did." [level=1] [ref=e22]: Know what your AI system can do—and what it actually did.
+    - paragraph [ref=e23]: Scan backend code, discover AI capabilities, approve authorization policies, and monitor live model and tool behavior through one privacy-safe SDK.
+    - generic [ref=e24]:
+      - link "Run Scanner" [ref=e25] [cursor=pointer]:
+        - /url: "#scanner"
+      - link "View Live Demo" [ref=e26] [cursor=pointer]:
+        - /url: /ui/
+      - link "Explore Platform" [ref=e27] [cursor=pointer]:
+        - /url: "#journey"
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]: 📁
+        - generic [ref=e31]: Codebase
+      - generic [ref=e32]: →
+      - generic [ref=e33]:
+        - generic [ref=e34]: 🔍
+        - generic [ref=e35]: Scanner
+      - generic [ref=e36]: →
+      - generic [ref=e37]:
+        - generic [ref=e38]: ✅
+        - generic [ref=e39]: ACAP Review
+      - generic [ref=e40]: →
+      - generic [ref=e41]:
+        - generic [ref=e42]: 📡
+        - generic [ref=e43]: Runtime
+      - generic [ref=e44]: →
+      - generic [ref=e45]:
+        - generic [ref=e46]: 📊
+        - generic [ref=e47]: Assessment
+  - generic [ref=e49]:
+    - generic [ref=e50]: The Problem
+    - heading "AI apps are hard to govern because one request can trigger…" [level=2] [ref=e51]
+    - generic [ref=e52]:
+      - generic [ref=e53]: POST /refund
+      - generic [ref=e54]: →
+      - generic [ref=e55]: OpenAI call
+      - generic [ref=e56]: →
+      - generic [ref=e57]: refund_execute
+      - generic [ref=e58]: →
+      - generic [ref=e59]: send_email
+      - generic [ref=e60]: →
+      - generic [ref=e61]: update_database
+    - generic [ref=e62]:
+      - text: Logs tell you something happened. Monitoring tells you it was slow.
+      - strong [ref=e63]: Governance tells you whether it was allowed.
+    - generic [ref=e64]:
+      - generic [ref=e65]:
+        - heading "LLM Calls" [level=4] [ref=e66]
+        - paragraph [ref=e67]: Model invocations with unpredictable outputs, token usage, and decision-making that affects downstream actions.
+      - generic [ref=e68]:
+        - heading "Tool Executions" [level=4] [ref=e69]
+        - paragraph [ref=e70]: Refunds, emails, database writes, and external API calls that have real-world side effects.
+      - generic [ref=e71]:
+        - heading "Invisible Chains" [level=4] [ref=e72]
+        - paragraph [ref=e73]: Agent loops, multi-step reasoning, and tool cascades that are invisible to traditional monitoring.
+  - generic [ref=e75]:
+    - generic [ref=e76]: Discovery
+    - heading "Scan your codebase. Discover governed capabilities automatically." [level=2] [ref=e77]
+    - paragraph [ref=e78]: The scanner analyzes your source code, identifies tools and AI-driven functions, classifies risk, and suggests governance policies before a single line of instrumentation.
+    - generic [ref=e79]:
+      - generic [ref=e80]:
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - generic [ref=e83]: 1,248
+            - generic [ref=e84]: Files Scanned
+          - generic [ref=e85]:
+            - generic [ref=e86]: "43"
+            - generic [ref=e87]: Capabilities Found
+          - generic [ref=e88]:
+            - generic [ref=e89]: "11"
+            - generic [ref=e90]: High Risk
+          - generic [ref=e91]:
+            - generic [ref=e92]: "18"
+            - generic [ref=e93]: Medium Risk
+          - generic [ref=e94]:
+            - generic [ref=e95]: "14"
+            - generic [ref=e96]: Low Risk
+          - generic [ref=e97]:
+            - generic [ref=e98]: 14,777
+            - generic [ref=e99]: Helpers Ignored
+        - generic [ref=e100]:
+          - generic [ref=e101] [cursor=pointer]:
+            - generic [ref=e102]: refund_execute
+            - generic [ref=e103]: High Risk
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - generic [ref=e106]:
+                - generic [ref=e107]: Action
+                - generic [ref=e108]: Write
+              - generic [ref=e109]:
+                - generic [ref=e110]: Approval
+                - generic [ref=e111]: Required
+              - generic [ref=e112]:
+                - generic [ref=e113]: Data
+                - generic [ref=e114]: Financial + Customer
+              - generic [ref=e115]:
+                - generic [ref=e116]: Confidence
+                - generic [ref=e117]: 91%
+            - generic [ref=e118]:
+              - heading "Evidence" [level=5] [ref=e119]
+              - list [ref=e120]:
+                - listitem [ref=e121]: › Function name contains "refund"
+                - listitem [ref=e122]: › Calls payment provider API
+                - listitem [ref=e123]: › Amount parameter detected
+                - listitem [ref=e124]: › Used inside POST /refund route
+            - generic [ref=e127]:
+              - button "Approve" [ref=e128] [cursor=pointer]
+              - button "Edit" [ref=e129] [cursor=pointer]
+              - button "Reject" [ref=e130] [cursor=pointer]
+        - generic [ref=e132] [cursor=pointer]:
+          - generic [ref=e133]: send_invoice_email
+          - generic [ref=e134]: Medium Risk
+        - generic [ref=e136] [cursor=pointer]:
+          - generic [ref=e137]: delete_customer
+          - generic [ref=e138]: High Risk
+      - generic [ref=e140]:
+        - generic [ref=e141]: agentgov-scanner
+        - generic [ref=e146]:
+          - generic [ref=e147]: $ agent-governance scan ./my-agent
+          - generic [ref=e148]: Scanning project structure…
+          - generic [ref=e149]: Analyzing 1,248 source files…
+          - generic [ref=e151]: "[FOUND] refund_execute — side_effect: financial"
+          - generic [ref=e152]: "[FOUND] send_invoice_email — side_effect: communication"
+          - generic [ref=e153]: "[FOUND] delete_customer — side_effect: data_deletion"
+          - generic [ref=e154]: "[FOUND] query_menu — side_effect: none"
+          - generic [ref=e156]: "Capabilities mapped: 43 tools, 29 with side effects"
+          - generic [ref=e157]: "Helpers ignored: 14,777 functions"
+          - generic [ref=e158]: "Time: 2.3s"
+          - generic [ref=e160]: Done. Review suggestions at http://localhost:8000/product/#review
+  - generic [ref=e162]:
+    - generic [ref=e163]: Review
+    - heading "Review suggestions, don’t write policies from scratch." [level=2] [ref=e164]
+    - paragraph [ref=e165]: The platform does the heavy discovery work. Humans only approve, edit, or reject the important decisions. No manually decorating hundreds of functions.
+    - generic [ref=e166]:
+      - generic [ref=e167]:
+        - generic [ref=e168]: "1"
+        - heading "Scanner Suggests" [level=3] [ref=e170]
+        - paragraph [ref=e171]: Static analysis discovers tools, classifies risk, and proposes action types, data classes, and approval requirements.
+      - generic [ref=e172]:
+        - generic [ref=e173]: "2"
+        - heading "Team Reviews" [level=3] [ref=e175]
+        - paragraph [ref=e176]: Engineers and compliance reviewers approve, edit, or reject each suggestion. Only human-confirmed decisions become policy.
+      - generic [ref=e177]:
+        - generic [ref=e178]: "3"
+        - heading "ACAP Generated" [level=3] [ref=e179]
+        - paragraph [ref=e180]: Approved decisions are compiled into a structured authorization contract—the ACAP—that the runtime enforces.
+  - generic [ref=e182]:
+    - generic [ref=e183]: Authorization
+    - heading "Turn reviewed capabilities into an authorization contract." [level=2] [ref=e184]
+    - paragraph [ref=e185]: The Allowed Capability and Authorization Policy (ACAP) is a machine-readable governance boundary. It defines what your AI system is allowed to do—and what requires approval.
+    - generic [ref=e186]:
+      - generic [ref=e187]: "capability: refund_execute action_type: write approval_required: true data_classes: - financial - customer_data external_side_effect: true max_amount: 500.00 status: approved reviewed_by: compliance-team reviewed_at: 2026-08-24T14:30:00Z"
+      - generic [ref=e188]:
+        - generic [ref=e189]:
+          - heading "Plain English" [level=4] [ref=e190]
+          - paragraph [ref=e191]:
+            - text: “The
+            - code [ref=e192]: refund_execute
+            - text: tool is allowed only when trusted approval is present. It handles financial and customer data, has an external side effect, and must not exceed $500.”
+        - generic [ref=e193]:
+          - generic [ref=e194]:
+            - heading "Allowed Capabilities" [level=4] [ref=e195]
+            - paragraph [ref=e196]: 43 tools, 29 governed
+          - generic [ref=e197]:
+            - heading "Approval Required" [level=4] [ref=e198]
+            - paragraph [ref=e199]: 11 high-risk tools
+          - generic [ref=e200]:
+            - heading "Data Boundaries" [level=4] [ref=e201]
+            - paragraph [ref=e202]: Financial, Customer, PII
+          - generic [ref=e203]:
+            - heading "Reassessment" [level=4] [ref=e204]
+            - paragraph [ref=e205]: On capability change
+  - generic [ref=e207]:
+    - generic [ref=e208]: Runtime
+    - heading "Monitor what actually happens at runtime." [level=2] [ref=e209]
+    - paragraph [ref=e210]: Every model call, tool execution, and agent decision is captured as a structured governance event with safe metadata—no raw prompts or responses by default.
+    - generic [ref=e211]:
+      - generic [ref=e212]:
+        - heading "POST /refund trace" [level=3] [ref=e213]
+        - paragraph [ref=e214]: A single user request triggers a chain of observable events. Each event captures provider, model, tool, status, duration, approval state, data classification, and trace ID—without exposing sensitive content.
+        - generic [ref=e215]:
+          - generic [ref=e216]: 🔒
+          - paragraph [ref=e217]:
+            - strong [ref=e218]: Privacy-safe by default.
+            - text: No raw prompts or responses stored. Only hashes, metadata, and governance evidence. Content capture is opt-in and redacted.
+      - generic [ref=e219]:
+        - generic [ref=e220]:
+          - generic [ref=e221]: 📥
+          - generic [ref=e222]:
+            - generic [ref=e223]: Inbound Request
+            - generic [ref=e224]: POST /refund · trace:7f3a9b
+          - generic [ref=e225]: "200"
+        - generic [ref=e226]:
+          - generic [ref=e227]: 🤖
+          - generic [ref=e228]:
+            - generic [ref=e229]: LLM Call — OpenAI GPT-4.1-mini
+            - generic [ref=e230]: "tokens: 1,240 · 620ms · prompt_hash:a8c2e1"
+          - generic [ref=e231]: ok
+        - generic [ref=e232]:
+          - generic [ref=e233]: 🔧
+          - generic [ref=e234]:
+            - generic [ref=e235]: "Tool: refund_execute"
+            - generic [ref=e236]: "action: write · approval: granted · $48.00"
+          - generic [ref=e237]: ok
+        - generic [ref=e238]:
+          - generic [ref=e239]: ✉
+          - generic [ref=e240]:
+            - generic [ref=e241]: "Tool: send_email"
+            - generic [ref=e242]: "action: communicate · recipient_hash:b7d412"
+          - generic [ref=e243]: ok
+        - generic [ref=e244]:
+          - generic [ref=e245]: ✅
+          - generic [ref=e246]:
+            - generic [ref=e247]: Response
+            - generic [ref=e248]: "200 OK · total: 1,340ms · 4 events"
+          - generic [ref=e249]: done
+  - generic [ref=e251]:
+    - generic [ref=e252]: Integration
+    - heading "Connect the AI stack you already use." [level=2] [ref=e253]
+    - paragraph [ref=e254]: Drop-in adapters capture governance evidence from your existing frameworks. No rewrites, no vendor lock-in.
+    - generic [ref=e255]:
+      - generic [ref=e256]:
+        - generic [ref=e257]:
+          - generic [ref=e258]: FastAPI
+          - generic [ref=e259]: Active
+        - paragraph [ref=e260]: Request-level traces with route, method, status, and timing for every AI-triggered endpoint.
+        - generic [ref=e261]: app.add_middleware(GovernanceMiddleware)
+      - generic [ref=e262]:
+        - generic [ref=e263]:
+          - generic [ref=e264]: OpenAI
+          - generic [ref=e265]: Active
+        - paragraph [ref=e266]: Model calls, token usage, latency, prompt/response hashes, and error tracking.
+        - generic [ref=e267]: client = wrap_openai(OpenAI(), gov)
+      - generic [ref=e268]:
+        - generic [ref=e269]:
+          - generic [ref=e270]: Anthropic
+          - generic [ref=e271]: Active
+        - paragraph [ref=e272]: Messages API calls, stop reason, usage metrics, and error events.
+        - generic [ref=e273]: client = wrap_anthropic(Anthropic(), gov)
+      - generic [ref=e274]:
+        - generic [ref=e275]:
+          - generic [ref=e276]: LangChain / LangGraph
+          - generic [ref=e277]: Active
+        - paragraph [ref=e278]: Agent, chain, tool, and LLM events with full run hierarchy and parent/child traces.
+        - generic [ref=e279]: chain.invoke(input, config=gov.config())
+      - generic [ref=e280]:
+        - generic [ref=e281]:
+          - generic [ref=e282]: Custom Python Tools
+          - generic [ref=e283]: Active
+        - paragraph [ref=e284]: Refunds, emails, invoices, database updates—any Python function with side effects.
+        - generic [ref=e285]: "@gov.tool(action=\"write\", data=[\"financial\"])"
+      - generic [ref=e286]:
+        - generic [ref=e287]:
+          - generic [ref=e288]: Application Logs
+          - generic [ref=e289]: Supported
+        - paragraph [ref=e290]: Lower-confidence evidence signals from structured application logs and audit trails.
+        - generic [ref=e291]: gov.ingest_log(log_entry, confidence="medium")
+      - generic [ref=e292]:
+        - generic [ref=e293]:
+          - generic [ref=e294]: Codebase Scanner
+          - generic [ref=e295]: Discovery
+        - paragraph [ref=e296]: Capability discovery through static analysis before any runtime instrumentation.
+        - generic [ref=e297]: agent-governance scan ./my-agent
+  - generic [ref=e299]:
+    - generic [ref=e300]: Trust
+    - heading "Not all evidence is equal. We show confidence and provenance." [level=2] [ref=e301]
+    - paragraph [ref=e302]: Every piece of evidence carries a confidence level and source attribution so you know exactly what you can trust and what needs review.
+    - generic [ref=e303]:
+      - generic [ref=e304]:
+        - generic [ref=e305]: ■
+        - heading "SDK Event" [level=4] [ref=e306]
+        - paragraph [ref=e307]: Runtime instrumentation
+        - generic [ref=e308]: High Confidence
+      - generic [ref=e310]:
+        - generic [ref=e311]: ■
+        - heading "Structured Log" [level=4] [ref=e312]
+        - paragraph [ref=e313]: Application logs
+        - generic [ref=e314]: Medium Confidence
+      - generic [ref=e316]:
+        - generic [ref=e317]: ■
+        - heading "Scanner Suggestion" [level=4] [ref=e318]
+        - paragraph [ref=e319]: Static analysis
+        - generic [ref=e320]: Suggested
+      - generic [ref=e322]:
+        - generic [ref=e323]: ■
+        - heading "AI Classification" [level=4] [ref=e324]
+        - paragraph [ref=e325]: AI-assisted enrichment
+        - generic [ref=e326]: Needs Review
+    - generic [ref=e328]: Scanner suggests. Human approves. Runtime proves.
+  - generic [ref=e330]:
+    - generic [ref=e331]: Assessment
+    - heading "From raw behavior to governance assessment." [level=2] [ref=e332]
+    - paragraph [ref=e333]: Evidence rolls up into a structured assessment with findings, framework mappings, and remediation guidance.
+    - generic [ref=e334]:
+      - generic [ref=e335]:
+        - generic [ref=e336]: support-api
+        - generic [ref=e337]: System
+      - generic [ref=e338]:
+        - generic [ref=e339]: Remediation
+        - generic [ref=e340]: Status
+      - generic [ref=e341]:
+        - generic [ref=e342]: "440"
+        - generic [ref=e343]: Events
+      - generic [ref=e344]:
+        - generic [ref=e345]: "2"
+        - generic [ref=e346]: Findings
+      - generic [ref=e347]:
+        - generic [ref=e348]: AGT-AUTH-001
+        - generic [ref=e349]: Failed Control
+      - generic [ref=e350]:
+        - generic [ref=e351]: 87%
+        - generic [ref=e352]: Coverage
+      - generic [ref=e353]:
+        - generic [ref=e354]: Reviewed
+        - generic [ref=e355]: ACAP Status
+    - generic [ref=e356]:
+      - generic [ref=e357]: ⚠ Refund executed without trusted approval
+      - generic [ref=e358]:
+        - heading "Evidence Chain" [level=5] [ref=e359]
+        - list [ref=e360]:
+          - listitem [ref=e361]: ● POST /refund trace — trace:7f3a9b
+          - listitem [ref=e362]: ● OpenAI model call — GPT-4.1-mini, 1,240 tokens
+          - listitem [ref=e363]: ● refund_execute tool event — $48.00, no approval token
+          - listitem [ref=e364]: "● ACAP requires approval_required: true"
+      - generic [ref=e365]:
+        - heading "Impact" [level=5] [ref=e366]
+        - list [ref=e367]:
+          - listitem [ref=e368]: ⚠ ACAP authorization boundary violated
+          - listitem [ref=e369]: ⚠ NIST AI RMF — Govern 1.1 applicable
+          - listitem [ref=e370]: ⚠ OWASP Agentic Top 10 — A01 risk relevant
+          - listitem [ref=e371]: ⚠ ISO 42001 — evidence gap identified
+      - link "View in Dashboard" [ref=e372] [cursor=pointer]:
+        - /url: /ui/
+  - generic [ref=e374]:
+    - generic [ref=e375]: Gaps
+    - heading "Find what is not yet governed." [level=2] [ref=e376]
+    - paragraph [ref=e377]: The platform identifies coverage gaps—capabilities that exist in code but lack runtime evidence or governance policies.
+    - generic [ref=e378]:
+      - generic [ref=e379]:
+        - generic [ref=e380]: ⚠
+        - generic [ref=e381]:
+          - text: Scanner found
+          - code [ref=e382]: refund_execute
+          - text: ", but no runtime tool event was observed in the last 30 days."
+      - generic [ref=e383]:
+        - generic [ref=e384]: ⚠
+        - generic [ref=e385]:
+          - code [ref=e386]: POST /invoice
+          - text: contains LLM calls but no approved business capability in the ACAP.
+      - generic [ref=e387]:
+        - generic [ref=e388]: ⚠
+        - generic [ref=e389]:
+          - text: Logs mention
+          - code [ref=e390]: “email sent”
+          - text: ", but no governed"
+          - code [ref=e391]: send_email
+          - text: tool exists in the capability catalog.
+      - generic [ref=e392]:
+        - generic [ref=e393]: ⚠
+        - generic [ref=e394]:
+          - code [ref=e395]: delete_customer
+          - text: is approved in the ACAP but has zero runtime events—either unused or uninstrumented.
+    - link "Generate Instrumentation Plan" [ref=e397] [cursor=pointer]:
+      - /url: "#journey"
+  - generic [ref=e399]:
+    - generic [ref=e400]: Getting Started
+    - heading "From zero to governed in six steps." [level=2] [ref=e401]
+    - paragraph [ref=e402]: A complete path from installation to evidence-backed assessment.
+    - generic [ref=e403]:
+      - generic [ref=e404] [cursor=pointer]:
+        - generic [ref=e405]: "1"
+        - generic [ref=e406]: Install
+      - generic [ref=e407] [cursor=pointer]:
+        - generic [ref=e408]: "2"
+        - generic [ref=e409]: Scan
+      - generic [ref=e410] [cursor=pointer]:
+        - generic [ref=e411]: "3"
+        - generic [ref=e412]: Review
+      - generic [ref=e413] [cursor=pointer]:
+        - generic [ref=e414]: "4"
+        - generic [ref=e415]: Generate ACAP
+      - generic [ref=e416] [cursor=pointer]:
+        - generic [ref=e417]: "5"
+        - generic [ref=e418]: Monitor
+      - generic [ref=e419] [cursor=pointer]:
+        - generic [ref=e420]: "6"
+        - generic [ref=e421]: Assess
+    - generic [ref=e422]:
+      - heading "Install the SDK" [level=3] [ref=e423]
+      - paragraph [ref=e424]: One package. No infrastructure required.
+      - generic [ref=e425]:
+        - generic [ref=e426]: terminal
+        - generic [ref=e431]:
+          - generic [ref=e432]: $ pip install agent-governance-sdk
+          - generic [ref=e433]: Successfully installed agent-governance-sdk-0.1.0
+  - generic [ref=e435]:
+    - generic [ref=e436]: Value
+    - heading "Built for every team in the AI lifecycle." [level=2] [ref=e437]
+    - generic [ref=e438]:
+      - generic [ref=e439]:
+        - generic [ref=e440]: Developers
+        - heading "Ship with confidence" [level=3] [ref=e441]
+        - list [ref=e442]:
+          - listitem [ref=e443]: ✓ Minimal code changes
+          - listitem [ref=e444]: ✓ Automatic adapter support
+          - listitem [ref=e445]: ✓ Scanner-assisted onboarding
+          - listitem [ref=e446]: ✓ No manual tagging of functions
+          - listitem [ref=e447]: ✓ Privacy-safe events by default
+      - generic [ref=e448]:
+        - generic [ref=e449]: Engineering Leaders
+        - heading "Visibility at scale" [level=3] [ref=e450]
+        - list [ref=e451]:
+          - listitem [ref=e452]: ✓ Cross-system AI visibility
+          - listitem [ref=e453]: ✓ Reduced integration effort
+          - listitem [ref=e454]: ✓ Coverage gap detection
+          - listitem [ref=e455]: ✓ Standardized evidence format
+          - listitem [ref=e456]: ✓ Framework-agnostic approach
+      - generic [ref=e457]:
+        - generic [ref=e458]: Governance / Compliance
+        - heading "Evidence, not assertions" [level=3] [ref=e459]
+        - list [ref=e460]:
+          - listitem [ref=e461]: ✓ Reviewed authorization boundaries
+          - listitem [ref=e462]: ✓ Evidence-backed assessments
+          - listitem [ref=e463]: ✓ NIST, ISO, OWASP mapping
+          - listitem [ref=e464]: ✓ Audit-ready findings
+          - listitem [ref=e465]: ✓ Continuous monitoring
+      - generic [ref=e466]:
+        - generic [ref=e467]: Executives
+        - heading "Scale AI safely" [level=3] [ref=e468]
+        - list [ref=e469]:
+          - listitem [ref=e470]: ✓ Reduce manual review burden
+          - listitem [ref=e471]: ✓ Ship AI agents with oversight
+          - listitem [ref=e472]: ✓ Board-ready compliance posture
+          - listitem [ref=e473]: ✓ Risk quantification
+          - listitem [ref=e474]: ✓ Regulatory readiness
+  - generic [ref=e477]:
+    - generic [ref=e478]: Get Started
+    - heading "Move from AI experiments to governed AI systems." [level=2] [ref=e479]
+    - paragraph [ref=e480]: Discover capabilities, approve policies, monitor runtime behavior, and generate evidence-backed assessments from one platform.
+    - generic [ref=e481]:
+      - link "Open Demo Dashboard" [ref=e482] [cursor=pointer]:
+        - /url: /ui/
+      - link "Review SDK" [ref=e483] [cursor=pointer]:
+        - /url: "#scanner"
+      - link "Approve Next Milestone" [ref=e484] [cursor=pointer]:
+        - /url: "#assessment"
+  - contentinfo [ref=e485]:
+    - paragraph [ref=e487]: AgentGov — Runtime evidence for AI governance. Open source. Framework agnostic. Production ready.

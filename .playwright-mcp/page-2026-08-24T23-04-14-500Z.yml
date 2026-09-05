@@ -1,0 +1,217 @@
+- main [ref=f1e2]:
+  - generic [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - heading "AI Governance Command Center" [level=1] [ref=f1e5]
+      - paragraph [ref=f1e6]: Runtime evidence, risk classification, and compliance assessment
+    - generic [ref=f1e7]:
+      - combobox "Select system" [ref=f1e8] [cursor=pointer]:
+        - option "Loading..." [selected]
+      - button "Reset Demo" [ref=f1e9] [cursor=pointer]
+      - button "Export Report" [ref=f1e10] [cursor=pointer]
+      - button "Run Assessment" [ref=f1e11] [cursor=pointer]
+  - generic [ref=f1e12]: This dashboard demonstrates automated AI governance evidence collection, risk assessment, and framework applicability for an AI agent system. The restaurant-agent serves as an example — the governance layer is system-agnostic.
+  - region "Key indicators" [ref=f1e13]:
+    - generic [ref=f1e14]:
+      - generic [ref=f1e15]: ■
+      - generic [ref=f1e16]: Governance Status
+      - generic [ref=f1e17]: "-"
+    - generic [ref=f1e18]:
+      - generic [ref=f1e19]: ◆
+      - generic [ref=f1e20]: Risk Level
+      - generic [ref=f1e21]: "-"
+    - generic [ref=f1e22]:
+      - generic [ref=f1e23]: ●
+      - generic [ref=f1e24]: Evidence Events
+      - strong [ref=f1e25]: "-"
+    - generic [ref=f1e26]:
+      - generic [ref=f1e27]: ⚠
+      - generic [ref=f1e28]: Open Findings
+      - strong [ref=f1e29]: "-"
+    - generic [ref=f1e30]:
+      - generic [ref=f1e31]: ✖
+      - generic [ref=f1e32]: Failed Controls
+      - strong [ref=f1e33]: "-"
+    - generic [ref=f1e34]:
+      - generic [ref=f1e35]: ★
+      - generic [ref=f1e36]: Evidence Confidence
+      - generic [ref=f1e37]: "-"
+  - heading "Overview" [level=2] [ref=f1e38]
+  - region "System registry" [ref=f1e39]:
+    - generic [ref=f1e40]:
+      - heading "System" [level=2] [ref=f1e42]
+      - generic [ref=f1e43]:
+        - generic [ref=f1e44]:
+          - term [ref=f1e45]: System ID
+          - definition [ref=f1e46]: "-"
+        - generic [ref=f1e47]:
+          - term [ref=f1e48]: Deployment
+          - definition [ref=f1e49]: "-"
+        - generic [ref=f1e50]:
+          - term [ref=f1e51]: Environment
+          - definition [ref=f1e52]: "-"
+        - generic [ref=f1e53]:
+          - term [ref=f1e54]: Owner
+          - definition [ref=f1e55]: "-"
+        - generic [ref=f1e56]:
+          - term [ref=f1e57]: Purpose
+          - definition [ref=f1e58]: "-"
+    - generic [ref=f1e59]:
+      - generic [ref=f1e60]:
+        - heading "Reviewed ACAP" [level=2] [ref=f1e61]
+        - generic [ref=f1e62]: "-"
+      - generic [ref=f1e63]:
+        - generic [ref=f1e64]:
+          - term [ref=f1e65]: ACAP ID
+          - definition [ref=f1e66]: "-"
+        - generic [ref=f1e67]:
+          - term [ref=f1e68]: Review
+          - definition [ref=f1e69]: "-"
+        - generic [ref=f1e70]:
+          - term [ref=f1e71]: Approval Tools
+          - definition [ref=f1e72]: "-"
+        - generic [ref=f1e73]:
+          - term [ref=f1e74]: Prohibited Actions
+          - definition [ref=f1e75]: "-"
+  - heading "Assessment" [level=2] [ref=f1e76]
+  - region "Latest Assessment" [ref=f1e77]:
+    - generic [ref=f1e78]:
+      - generic [ref=f1e79]:
+        - heading "Latest Assessment" [level=2] [ref=f1e80]
+        - generic [ref=f1e81]: "-"
+      - generic [ref=f1e82]:
+        - generic [ref=f1e83]:
+          - generic [ref=f1e84]:
+            - term [ref=f1e85]: Assessment ID
+            - definition [ref=f1e86]: "-"
+          - generic [ref=f1e87]:
+            - term [ref=f1e88]: Assessed At
+            - definition [ref=f1e89]: "-"
+          - generic [ref=f1e90]:
+            - term [ref=f1e91]: Evidence Confidence
+            - definition [ref=f1e92]: "-"
+          - generic [ref=f1e93]:
+            - term [ref=f1e94]: Failed Controls
+            - definition [ref=f1e95]: "-"
+        - generic [ref=f1e96]:
+          - generic [ref=f1e97]:
+            - heading "Framework Status" [level=3] [ref=f1e98]
+            - table [ref=f1e99]:
+              - rowgroup [ref=f1e100]:
+                - row [ref=f1e101]:
+                  - columnheader "Framework" [ref=f1e102]
+                  - columnheader "Status" [ref=f1e103]
+              - rowgroup
+          - generic [ref=f1e104]:
+            - heading "Recommended Actions" [level=3] [ref=f1e105]
+            - list
+  - heading "Authorization / ACAP" [level=2] [ref=f1e106]
+  - region "ACAP Review" [ref=f1e107]:
+    - generic [ref=f1e108]:
+      - generic [ref=f1e109]:
+        - heading "Tool Authorization" [level=2] [ref=f1e110]
+        - generic [ref=f1e111]: "-"
+      - table [ref=f1e113]:
+        - rowgroup [ref=f1e114]:
+          - row [ref=f1e115]:
+            - columnheader "Tool" [ref=f1e116]
+            - columnheader "Action Type" [ref=f1e117]
+            - columnheader "Approval" [ref=f1e118]
+            - columnheader "Observed Uses" [ref=f1e119]
+            - columnheader "Authorization" [ref=f1e120]
+        - rowgroup
+  - heading "Risk & Frameworks" [level=2] [ref=f1e121]
+  - region "Risk and Applicability" [ref=f1e122]:
+    - generic [ref=f1e123]:
+      - heading "Risk Profile" [level=2] [ref=f1e125]
+      - generic [ref=f1e126]:
+        - generic [ref=f1e127]:
+          - term [ref=f1e128]: Use Case
+          - definition [ref=f1e129]: "-"
+        - generic [ref=f1e130]:
+          - term [ref=f1e131]: Environment
+          - definition [ref=f1e132]: "-"
+        - generic [ref=f1e133]:
+          - term [ref=f1e134]: Authority Level
+          - definition [ref=f1e135]: "-"
+        - generic [ref=f1e136]:
+          - term [ref=f1e137]: Autonomy Level
+          - definition [ref=f1e138]: "-"
+        - generic [ref=f1e139]:
+          - term [ref=f1e140]: Data Sensitivity
+          - definition [ref=f1e141]: "-"
+        - generic [ref=f1e142]:
+          - term [ref=f1e143]: Side Effects
+          - definition [ref=f1e144]: "-"
+        - generic [ref=f1e145]:
+          - term [ref=f1e146]: Approval Model
+          - definition [ref=f1e147]: "-"
+        - generic [ref=f1e148]:
+          - term [ref=f1e149]: Jurisdiction
+          - definition [ref=f1e150]: "-"
+    - generic [ref=f1e151]:
+      - heading "Framework Applicability" [level=2] [ref=f1e153]
+      - table [ref=f1e155]:
+        - rowgroup [ref=f1e156]:
+          - row [ref=f1e157]:
+            - columnheader "Framework" [ref=f1e158]
+            - columnheader "Applicable" [ref=f1e159]
+            - columnheader "Reason" [ref=f1e160]
+        - rowgroup
+  - heading "Runtime Evidence" [level=2] [ref=f1e161]
+  - region "Evidence Coverage" [ref=f1e162]:
+    - generic [ref=f1e163]:
+      - generic [ref=f1e164]:
+        - heading "Evidence Coverage" [level=2] [ref=f1e165]
+        - generic [ref=f1e166]: "-"
+      - table [ref=f1e168]:
+        - rowgroup [ref=f1e169]:
+          - row [ref=f1e170]:
+            - columnheader "Field" [ref=f1e171]
+            - columnheader "Status" [ref=f1e172]
+            - columnheader "Presence" [ref=f1e173]
+            - columnheader "Note" [ref=f1e174]
+        - rowgroup
+  - heading "Findings" [level=2] [ref=f1e175]
+  - region "Findings workspace" [ref=f1e176]:
+    - complementary [ref=f1e177]:
+      - heading "Finding List" [level=2] [ref=f1e179]
+    - generic [ref=f1e181]:
+      - generic [ref=f1e182]:
+        - heading "Selected Finding" [level=2] [ref=f1e183]
+        - generic [ref=f1e184]: "-"
+      - generic [ref=f1e185]:
+        - generic [ref=f1e186]:
+          - term [ref=f1e187]: Rule
+          - definition [ref=f1e188]: "-"
+        - generic [ref=f1e189]:
+          - term [ref=f1e190]: Session
+          - definition [ref=f1e191]: "-"
+        - generic [ref=f1e192]:
+          - term [ref=f1e193]: ACAP
+          - definition [ref=f1e194]: "-"
+        - generic [ref=f1e195]:
+          - term [ref=f1e196]: Outcome
+          - definition [ref=f1e197]: "-"
+      - generic [ref=f1e198]:
+        - heading "What Happened" [level=3] [ref=f1e199]
+        - paragraph [ref=f1e200]: "-"
+      - generic [ref=f1e201]:
+        - heading "Why It Matters" [level=3] [ref=f1e202]
+        - paragraph [ref=f1e203]: "-"
+      - generic [ref=f1e204]:
+        - heading "Recommendation" [level=3] [ref=f1e205]
+        - paragraph [ref=f1e206]: "-"
+      - generic [ref=f1e207]:
+        - heading "Failed Control" [level=3] [ref=f1e208]
+        - generic [ref=f1e209]:
+          - generic [ref=f1e210]:
+            - term [ref=f1e211]: Control ID
+            - definition [ref=f1e212]: "-"
+          - generic [ref=f1e213]:
+            - term [ref=f1e214]: Control Title
+            - definition [ref=f1e215]: "-"
+      - heading "Framework Mappings" [level=3] [ref=f1e217]
+      - heading "Linked Evidence Event IDs" [level=3] [ref=f1e219]
+      - generic [ref=f1e220]:
+        - heading "Finding Timeline" [level=3] [ref=f1e221]
+        - list

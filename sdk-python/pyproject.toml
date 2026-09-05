@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-governance-sdk"
+version = "0.1.0"
+description = "Privacy-safe governance evidence instrumentation for AI agents and Python workflows."
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+  { name = "AI Governance SDK Maintainers", email = "maintainers@example.com" },
+]
+readme = "README.md"
+keywords = ["ai", "governance", "evidence", "instrumentation", "agents", "llm", "compliance"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Shrey721/Restaurant_Agent"
+Repository = "https://github.com/Shrey721/Restaurant_Agent"
+Issues = "https://github.com/Shrey721/Restaurant_Agent/issues"
+
+[project.optional-dependencies]
+openai = ["openai"]
+anthropic = ["anthropic"]
+fastapi = ["fastapi"]
+langchain = ["langchain-core"]
+acap = ["PyYAML"]
+all = [
+  "anthropic",
+  "fastapi",
+  "langchain-core",
+  "openai",
+  "PyYAML",
+]
+
+[project.scripts]
+agent-governance = "ai_governance.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ai_governance*"]
+exclude = ["ai_governance._poc*"]

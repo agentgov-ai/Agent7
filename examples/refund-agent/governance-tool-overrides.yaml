@@ -1,0 +1,35 @@
+schema_version: "0.1"
+tools:
+  lookup_order:
+    action_type: read
+    external_side_effect: false
+    reversible: true
+    data_classes: [order]
+    approval:
+      required: false
+
+  check_eligibility:
+    action_type: read
+    external_side_effect: false
+    reversible: true
+    data_classes: [order, policy]
+    approval:
+      required: false
+
+  refund_execute:
+    action_type: write
+    external_side_effect: true
+    reversible: false
+    target: payment_gateway
+    data_classes: [financial, order]
+    approval:
+      required: true
+      condition: eligibility_verified
+
+  send_notification:
+    action_type: communicate
+    external_side_effect: true
+    reversible: true
+    data_classes: [contact]
+    approval:
+      required: false

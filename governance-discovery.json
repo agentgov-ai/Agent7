@@ -1,0 +1,196 @@
+{
+  "candidates": [
+    {
+      "call_chain": [
+        "refund_execute -> stripe.refunds.create"
+      ],
+      "capability_id": "CAP-0ce6a9aaa99a",
+      "confidence": 0.95,
+      "confidence_source": "sink_reachability",
+      "evidence": [
+        {
+          "detail": "stripe.refunds.create",
+          "file_path": "app.py",
+          "line": 48,
+          "type": "sink_call"
+        },
+        {
+          "detail": "POST /refund",
+          "file_path": "app.py",
+          "line": 46,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 49,
+      "line_start": 46,
+      "module_path": "app",
+      "name": "refund_execute",
+      "review_status": "pending",
+      "risk": "high",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": true,
+      "suggested_data_classes": [
+        "financial"
+      ]
+    },
+    {
+      "call_chain": [
+        "send_invoice_email -> smtplib.SMTP.send_message"
+      ],
+      "capability_id": "CAP-cc82f085d3aa",
+      "confidence": 0.95,
+      "confidence_source": "sink_reachability",
+      "evidence": [
+        {
+          "detail": "smtplib.SMTP.send_message",
+          "file_path": "app.py",
+          "line": 59,
+          "type": "sink_call"
+        },
+        {
+          "detail": "POST /invoice",
+          "file_path": "app.py",
+          "line": 53,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 60,
+      "line_start": 53,
+      "module_path": "app",
+      "name": "send_invoice_email",
+      "review_status": "pending",
+      "risk": "high",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "communicate",
+      "suggested_approval_required": true,
+      "suggested_data_classes": [
+        "contact"
+      ]
+    },
+    {
+      "call_chain": [
+        "delete_customer -> session.delete",
+        "delete_customer -> session.commit"
+      ],
+      "capability_id": "CAP-bd89b8442e90",
+      "confidence": 0.95,
+      "confidence_source": "sink_reachability",
+      "evidence": [
+        {
+          "detail": "session.delete",
+          "file_path": "app.py",
+          "line": 68,
+          "type": "sink_call"
+        },
+        {
+          "detail": "session.commit",
+          "file_path": "app.py",
+          "line": 69,
+          "type": "sink_call"
+        },
+        {
+          "detail": "DELETE /customer/{customer_id}",
+          "file_path": "app.py",
+          "line": 64,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 70,
+      "line_start": 64,
+      "module_path": "app",
+      "name": "delete_customer",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "delete",
+      "suggested_approval_required": false,
+      "suggested_data_classes": [
+        "database"
+      ]
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-433a0d470edd",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name 'delete' matches risky pattern",
+          "file_path": "app.py",
+          "line": 30,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app.py",
+      "line_end": 30,
+      "line_start": 30,
+      "module_path": "app",
+      "name": "delete",
+      "review_status": "pending",
+      "risk": "high",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "delete",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    }
+  ],
+  "generated_at": "2026-08-28T22:05:06.768865+00:00",
+  "model_surface": [
+    {
+      "call_chain": [
+        "generate_reply -> openai.chat.completions.create"
+      ],
+      "category": "model_usage",
+      "file_path": "app.py",
+      "line": 79,
+      "module_path": "app",
+      "name": "generate_reply",
+      "provider": "openai"
+    },
+    {
+      "call_chain": [
+        "analyze_text -> anthropic.Anthropic"
+      ],
+      "category": "model_usage",
+      "file_path": "app.py",
+      "line": 88,
+      "module_path": "app",
+      "name": "analyze_text",
+      "provider": "anthropic"
+    },
+    {
+      "call_chain": [
+        "analyze_text -> anthropic.Anthropic.messages.create"
+      ],
+      "category": "model_usage",
+      "file_path": "app.py",
+      "line": 89,
+      "module_path": "app",
+      "name": "analyze_text",
+      "provider": "anthropic"
+    }
+  ],
+  "project_hash": "sha256:17748501fcbf8d00c3c7ccd5745e254d97edd2385166d16fee0cc95568cf24be",
+  "scan_summary": {
+    "candidates_found": 4,
+    "files_scanned": 1,
+    "functions_seen": 11,
+    "high_risk_count": 3,
+    "ignored_helpers_count": 7,
+    "low_risk_count": 0,
+    "medium_risk_count": 1,
+    "model_surface_found": 3,
+    "unenumerated_surface": []
+  },
+  "scanner_version": "0.1.0",
+  "schema_version": "0.1",
+  "source": "deterministic_scanner"
+}

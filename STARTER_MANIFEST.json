@@ -1,0 +1,7 @@
+{
+  "name": "restaurant-agent-governance-claude-starter",
+  "version": "2.1",
+  "purpose": "Instrument an existing LangChain restaurant agent and validate governance evidence extraction before building the full platform.",
+  "file_count": 31,
+  "recommended_first_skill": "/inspect-restaurant-agent"
+}

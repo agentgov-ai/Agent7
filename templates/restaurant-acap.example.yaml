@@ -1,0 +1,49 @@
+schema_version: "0.1"
+acap_id: restaurant-agent-local-draft
+status: draft
+
+system:
+  system_id: restaurant-agent
+  deployment_id: local-test
+  environment: local
+  purpose: unresolved
+  owner: unresolved
+
+content_policy:
+  raw_prompts: false
+  raw_outputs: false
+  tool_values: sanitized_summary
+
+agents:
+  - agent_id: restaurant-agent-main
+    discovered: true
+    authorization: unresolved
+
+models: []
+prompts: []
+
+tools: []
+
+# Example generated tool entry:
+# - name: create_reservation
+#   discovered: true
+#   observed: true
+#   proposed_action_type: write
+#   external_side_effect: true
+#   data_classes: [contact, reservation]
+#   authorization: unresolved
+#   approval:
+#     required: unresolved
+#   provenance:
+#     - source: code_discovery
+#     - source: runtime_event
+
+reassess_when:
+  - tool_added
+  - model_changed
+  - prompt_changed
+  - approval_logic_changed
+  - external_api_changed
+  - incident
+
+review_questions: []

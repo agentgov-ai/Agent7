@@ -1,0 +1,24 @@
+system_id: manifest-demo
+deployment_id: local-test
+environment: local
+
+capabilities:
+  - name: process_refund
+    module_path: app.process_refund
+    action_type: write
+    approval_required: true
+    data_classes: [financial, order]
+    external_side_effect: true
+    status: approved
+
+  - name: send_notification
+    module_path: app.send_notification
+    action_type: communicate
+    data_classes: [contact]
+    external_side_effect: true
+    status: approved
+
+  - name: internal_helper
+    module_path: app.internal_helper
+    action_type: read
+    status: pending

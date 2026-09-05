@@ -1,0 +1,66 @@
+# Human-maintained tool annotations for the restaurant agent.
+# Only contains facts that automatic discovery cannot prove.
+# action_type must stay within the event-schema enum: read|write|communicate|execute|unknown.
+# Consumed by governance_probe.bootstrap.load_overrides at startup (GOVERNANCE_EVIDENCE=1).
+
+schema_version: "0.1"
+tools:
+  greet_customer:
+    action_type: communicate
+    external_side_effect: false
+    reversible: true
+    data_classes: []
+    approval:
+      required: false
+
+  get_user_name:
+    action_type: read
+    external_side_effect: false
+    reversible: true
+    data_classes: [contact]
+    approval:
+      required: false
+
+  get_menu:
+    action_type: read
+    external_side_effect: false
+    reversible: true
+    target: faiss_menu_index
+    data_classes: [public_menu]
+    approval:
+      required: false
+
+  # Draft/proposal step: echoes the requested items back to the customer and
+  # asks for confirmation. No side effect; "communicate" is the closest
+  # schema-valid action type for this customer-facing proposal.
+  place_order:
+    action_type: communicate
+    external_side_effect: false
+    reversible: true
+    data_classes: [order]
+    approval:
+      required: false
+
+  # The single consequential (write) action in the app: appends the order to
+  # orders_log.json for staff verification. Trusted approval is structural:
+  # there must be a prior place_order proposal in the same session and
+  # confirm_order must arrive in a later customer turn. The model-supplied
+  # response argument is never trusted as approval evidence.
+  confirm_order:
+    action_type: write
+    external_side_effect: true
+    reversible: true
+    target: orders_log.json
+    data_classes: [order]
+    approval:
+      required: true
+      condition: customer_confirmation
+
+  show_receipt:
+    action_type: read
+    external_side_effect: false
+    reversible: true
+    target: faiss_menu_index
+    data_classes: [public_menu, order]
+    approval:
+      required: false
