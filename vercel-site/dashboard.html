@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentGov — Demo Dashboard</title>
+  <meta name="description" content="Interactive static demo of the AgentGov governance console: capability discovery, ACAP authorization, runtime evidence, findings and assessment." />
+  <meta name="robots" content="index, follow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/dashboard.css" />
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+  <meta name="theme-color" content="#111827" />
+
+  <!-- Demo-only additions layered on top of the shared dashboard theme.
+       The theme file itself is an untouched copy of the operational console. -->
+  <style>
+    .demo-banner {
+      background: var(--warn-soft);
+      border: 1px solid #f0d9a0;
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 0.83rem;
+      line-height: 1.6;
+      color: #7c4a03;
+    }
+    .demo-banner strong { color: #5d3702; }
+    .demo-banner a { color: var(--green); font-weight: 600; }
+    .sidebar-back {
+      display: block;
+      margin-top: 14px;
+      color: var(--sidebar-muted);
+      font-size: 0.8rem;
+      text-decoration: none;
+      transition: color 0.2s var(--ease);
+    }
+    .sidebar-back:hover { color: var(--sidebar-text); }
+    .sidebar-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--sidebar-muted);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .yaml-preview {
+      max-height: 320px;
+      overflow: auto;
+      margin-top: 12px;
+    }
+    .acap-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .event-row-flagged { background: var(--danger-soft); }
+    .event-row-flagged td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
+    .stream-legend {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+    .cap-status-row {
+      font-size: 0.8rem;
+      color: var(--green);
+      font-weight: 600;
+      margin-top: 10px;
+      min-height: 1.1em;
+    }
+    .cap-status-row.is-negative { color: var(--danger); }
+    .cap-status-row.is-neutral { color: var(--muted); }
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 950;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      padding: 11px 9px;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: stretch;
+    }
+    .sidebar-toggle span {
+      display: block;
+      height: 2px;
+      background: var(--text);
+      border-radius: 2px;
+      transition: transform 0.25s var(--ease), opacity 0.25s var(--ease);
+    }
+    .sidebar-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .sidebar-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .sidebar-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .sidebar-scrim {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26,35,50,0.45);
+      z-index: 890;
+    }
+    .sidebar-scrim.is-visible { display: block; }
+    @media (max-width: 960px) {
+      .sidebar-toggle { display: flex; }
+      .main-content { padding-top: 68px; }
+    }
+  </style>
+</head>
+<body>
+
+<button type="button" class="sidebar-toggle" id="sidebarToggle"
+        aria-label="Toggle navigation" aria-controls="dashboardSidebar" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-scrim" id="sidebarScrim" hidden></div>
+
+<div class="app-shell">
+
+  <!-- ============================ Sidebar ============================ -->
+  <aside class="sidebar" id="dashboardSidebar">
+    <div>
+      <a class="sidebar-brand" href="./index.html">AgentGov</a>
+
+      <span class="sidebar-label">System</span>
+      <select id="systemSelector" class="sidebar-select" aria-label="Select system"></select>
+
+      <nav class="sidebar-nav" aria-label="Dashboard sections">
+        <button type="button" class="nav-item active" data-tab="overview">Overview</button>
+        <button type="button" class="nav-item" data-tab="discovery">Capability Discovery</button>
+        <button type="button" class="nav-item" data-tab="acap">ACAP</button>
+        <button type="button" class="nav-item" data-tab="evidence">Runtime Evidence</button>
+        <button type="button" class="nav-item" data-tab="findings">Findings</button>
+        <button type="button" class="nav-item" data-tab="assessment">Assessment</button>
+      </nav>
+
+      <a class="sidebar-back" href="./index.html">&larr; Back to product site</a>
+    </div>
+
+    <div class="sidebar-footer">
+      <span class="sidebar-status" id="sidebarStatus">Static demo</span>
+    </div>
+  </aside>
+
+  <!-- ============================ Main ============================ -->
+  <main class="main-content">
+
+    <div class="demo-banner" role="note">
+      <strong>Interactive static demo.</strong>
+      Everything here runs in your browser on synthetic data &mdash; there is no backend and
+      no network call. Buttons really work, but changes live in page memory only and reset on
+      refresh. The real operational console runs inside the AgentGov service.
+    </div>
+
+    <!-- ---------------------------- Overview ---------------------------- -->
+    <div id="tab-overview" class="tab-panel active">
+      <header class="tab-header">
+        <h1>Overview</h1>
+        <p class="tab-subtitle">Executive summary for the selected system.</p>
+      </header>
+
+      <section class="kpi-strip">
+        <div class="kpi-card" id="kpiStatusCard">
+          <span class="kpi-label">Governance Status</span>
+          <span class="kpi-value" id="kpiStatus">&mdash;</span>
+        </div>
+        <div class="kpi-card accent-info" id="kpiRiskCard">
+          <span class="kpi-label">Risk Level</span>
+          <span class="kpi-value" id="kpiRisk">&mdash;</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Evidence Events</span>
+          <span class="kpi-number" id="kpiEvents">0</span>
+        </div>
+        <div class="kpi-card" id="kpiFindingsCard">
+          <span class="kpi-label">Open Findings</span>
+          <span class="kpi-number" id="kpiFindings">0</span>
+        </div>
+        <div class="kpi-card" id="kpiControlsCard">
+          <span class="kpi-label">Failed Controls</span>
+          <span class="kpi-number" id="kpiControls">0</span>
+        </div>
+        <div class="kpi-card" id="kpiConfidenceCard">
+          <span class="kpi-label">Evidence Confidence</span>
+          <span class="kpi-value" id="kpiConfidence">&mdash;</span>
+        </div>
+      </section>
+
+      <div class="card-grid-2">
+        <section class="card">
+          <div class="card-head"><h2>System</h2></div>
+          <dl class="meta-grid">
+            <div><dt>System ID</dt><dd class="mono" id="systemId">&mdash;</dd></div>
+            <div><dt>Deployment</dt><dd id="systemDeployment">&mdash;</dd></div>
+            <div><dt>Environment</dt><dd id="systemEnvironment">&mdash;</dd></div>
+            <div><dt>Owner</dt><dd id="systemOwner">&mdash;</dd></div>
+            <div class="wide"><dt>Purpose</dt><dd id="systemPurpose">&mdash;</dd></div>
+          </dl>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Reviewed ACAP</h2>
+            <span class="badge" id="acapStatus">&mdash;</span>
+          </div>
+          <dl class="meta-grid">
+            <div><dt>ACAP ID</dt><dd class="mono" id="acapId">&mdash;</dd></div>
+            <div><dt>Review</dt><dd id="acapReview">&mdash;</dd></div>
+            <div class="wide"><dt>Approval Required Tools</dt><dd class="mono" id="acapApprovalTools">&mdash;</dd></div>
+            <div><dt>Prohibited Actions</dt><dd id="acapProhibitedCount">&mdash;</dd></div>
+          </dl>
+        </section>
+      </div>
+
+      <section class="card" id="auditStatusPanel">
+        <div class="card-head">
+          <h2>Audit Status</h2>
+          <span class="badge" id="auditStatusBadge">&mdash;</span>
+        </div>
+        <p class="body-text" id="auditNextAction">&mdash;</p>
+      </section>
+
+      <section class="card" id="workflowPanel">
+        <div class="card-head"><h2>Governance Loop</h2></div>
+        <div class="workflow-steps" id="workflowSteps">
+          <div class="wf-step" id="wfScan"><span class="wf-dot"></span><span class="wf-label">Scanner Suggested</span></div>
+          <div class="wf-arrow"></div>
+          <div class="wf-step" id="wfReview"><span class="wf-dot"></span><span class="wf-label">Human Reviewed</span></div>
+          <div class="wf-arrow"></div>
+          <div class="wf-step" id="wfAcap"><span class="wf-dot"></span><span class="wf-label">ACAP Generated</span></div>
+          <div class="wf-arrow"></div>
+          <div class="wf-step" id="wfRules"><span class="wf-dot"></span><span class="wf-label">Runtime Rules Run</span></div>
+          <div class="wf-arrow"></div>
+          <div class="wf-step" id="wfFindings"><span class="wf-dot"></span><span class="wf-label">Findings Detected</span></div>
+        </div>
+        <p class="hint-text">
+          Scanner output is not authorization. Only reviewed capabilities enter the ACAP.
+          Runtime findings compare observed behavior against the active ACAP version.
+        </p>
+      </section>
+    </div>
+
+    <!-- ------------------------ Capability Discovery ------------------------ -->
+    <div id="tab-discovery" class="tab-panel">
+      <header class="tab-header">
+        <h1>Capability Discovery</h1>
+        <p class="tab-subtitle">Scanner-discovered capabilities and the human review queue.</p>
+      </header>
+
+      <section class="card" id="scanSummaryPanel">
+        <div class="card-head">
+          <h2>Scan Summary</h2>
+          <span class="badge" id="scanUploadId">&mdash;</span>
+        </div>
+        <dl class="meta-grid" id="scanSummaryGrid">
+          <div><dt>Files Scanned</dt><dd id="scanFilesScanned">&mdash;</dd></div>
+          <div><dt>Functions Seen</dt><dd id="scanFunctionsSeen">&mdash;</dd></div>
+          <div><dt>Candidates Found</dt><dd id="scanCandidatesFound">&mdash;</dd></div>
+          <div><dt>Model Surface</dt><dd id="scanModelSurface">&mdash;</dd></div>
+          <div><dt>High Risk</dt><dd id="scanHighRisk">&mdash;</dd></div>
+          <div><dt>Medium Risk</dt><dd id="scanMediumRisk">&mdash;</dd></div>
+          <div><dt>Low Risk</dt><dd id="scanLowRisk">&mdash;</dd></div>
+          <div><dt>Helpers Ignored</dt><dd id="scanIgnored">&mdash;</dd></div>
+        </dl>
+        <p class="hint-text">
+          The scanner collapsed <span id="scanCollapseNote">many</span> functions into a short
+          review queue. It suggests; it never authorizes.
+        </p>
+      </section>
+
+      <div class="risk-filters" id="riskFilters" role="group" aria-label="Filter capabilities">
+        <button type="button" class="filter-btn active" data-risk="all">All</button>
+        <button type="button" class="filter-btn" data-risk="high">High</button>
+        <button type="button" class="filter-btn" data-risk="medium">Medium</button>
+        <button type="button" class="filter-btn" data-risk="low">Low</button>
+        <button type="button" class="filter-btn" data-risk="pending">Pending</button>
+        <button type="button" class="filter-btn" data-risk="reviewed">Reviewed</button>
+      </div>
+
+      <div id="capabilityCards"></div>
+
+      <section class="card" id="modelSurfacePanel">
+        <div class="card-head"><h2>Model Usage Surface</h2></div>
+        <div class="table-wrap">
+          <table class="gov-table">
+            <thead>
+              <tr><th>Function</th><th>Provider</th><th>File</th><th>Line</th><th>Call Chain</th></tr>
+            </thead>
+            <tbody id="modelSurfaceBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ---------------------------- ACAP ---------------------------- -->
+    <div id="tab-acap" class="tab-panel">
+      <header class="tab-header">
+        <h1>ACAP</h1>
+        <p class="tab-subtitle">Authorization Contract for Agent Permissions.</p>
+      </header>
+
+      <section class="card" id="acapPreviewPanel">
+        <div class="card-head">
+          <h2>ACAP Preview</h2>
+          <button type="button" class="btn-primary" id="btnGenerateAcap">Generate ACAP Version</button>
+        </div>
+        <div class="warning-banner hidden" id="acapPreviewWarning"></div>
+        <dl class="meta-grid" id="acapPreviewGrid">
+          <div><dt>Approved</dt><dd id="previewApproved">0</dd></div>
+          <div><dt>Denied</dt><dd id="previewDenied">0</dd></div>
+          <div><dt>Pending</dt><dd id="previewPending">0</dd></div>
+          <div><dt>Not a Capability</dt><dd id="previewFP">0</dd></div>
+        </dl>
+        <div id="acapPreviewAllowed"></div>
+        <div id="acapPreviewDeniedList"></div>
+      </section>
+
+      <section class="card" id="acapVersionsPanel">
+        <div class="card-head">
+          <h2>Version History</h2>
+          <div class="acap-actions">
+            <button type="button" class="btn-secondary" id="btnPreviewYaml">Preview governance.yaml</button>
+            <button type="button" class="run-btn" id="btnRunAcapRules">Run ACAP Rules</button>
+          </div>
+        </div>
+        <div id="acapVersionsList"></div>
+        <p class="wf-hint hidden" id="runAcapHint">Generate an ACAP version first.</p>
+        <p class="wf-result" id="runAcapResult"></p>
+      </section>
+
+      <section class="card hidden" id="yamlPanel">
+        <div class="card-head">
+          <h2>governance.yaml</h2>
+          <button type="button" class="btn-secondary" id="btnDownloadYaml">Download</button>
+        </div>
+        <p class="hint-text">
+          Generated from the approved capabilities in the active ACAP version. Denied
+          capabilities never appear here. This is the file the SDK reads to instrument the app.
+        </p>
+        <pre class="code-block yaml-preview" id="yamlOutput"></pre>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Tool Authorization</h2>
+          <span class="badge" id="draftStatus">&mdash;</span>
+        </div>
+        <div class="table-wrap">
+          <table class="gov-table" id="toolReviewTable">
+            <thead>
+              <tr><th>Tool</th><th>Action Type</th><th>Approval</th><th>Observed Uses</th><th>Authorization</th></tr>
+            </thead>
+            <tbody id="toolReviewBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="manifestUsagePanel">
+        <div class="card-head"><h2>Instrument from Manifest</h2></div>
+        <pre class="code-block usage-snippet">from ai_governance import GovernanceClient
+
+gov = GovernanceClient.from_config("governance.yaml")
+gov.instrument_from_config()</pre>
+      </section>
+
+      <section class="card explainer" id="governanceExplainer">
+        <p class="body-text">
+          Scanner output is not authorization. Only reviewed capabilities enter the ACAP.
+          Runtime findings compare observed behavior against the active ACAP version.
+        </p>
+      </section>
+    </div>
+
+    <!-- ------------------------ Runtime Evidence ------------------------ -->
+    <div id="tab-evidence" class="tab-panel">
+      <header class="tab-header">
+        <h1>Runtime Evidence</h1>
+        <p class="tab-subtitle">What the system actually did, and how completely it was captured.</p>
+      </header>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Event Stream</h2>
+          <span class="badge" id="eventStreamCount">0 events</span>
+        </div>
+        <div class="table-wrap">
+          <table class="gov-table">
+            <thead>
+              <tr><th>Time</th><th>Event</th><th>Component</th><th>Action</th><th>Approval</th><th>Outcome</th><th>Event ID</th></tr>
+            </thead>
+            <tbody id="eventStreamBody"></tbody>
+          </table>
+        </div>
+        <p class="stream-legend">
+          One trace, parent and child spans connected. Raw prompts, responses and tool
+          argument values are never stored &mdash; only hashes, sanitized summaries and metadata.
+          Highlighted rows are the events cited by findings.
+        </p>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Evidence Coverage</h2>
+          <span class="badge" id="coverageEventCount">0 events</span>
+        </div>
+        <div class="table-wrap">
+          <table class="gov-table" id="coverageTable">
+            <thead>
+              <tr><th>Field</th><th>Status</th><th>Presence</th><th>Note</th></tr>
+            </thead>
+            <tbody id="coverageBody"></tbody>
+          </table>
+        </div>
+        <p class="stream-legend">
+          Missing and annotation-required fields are reported as such, never fabricated.
+          Evidence confidence is capped at <strong>low</strong> while any required field is missing.
+        </p>
+      </section>
+    </div>
+
+    <!-- ---------------------------- Findings ---------------------------- -->
+    <div id="tab-findings" class="tab-panel">
+      <header class="tab-header">
+        <h1>Findings</h1>
+        <p class="tab-subtitle">Deterministic rule results linked to exact evidence event IDs.</p>
+      </header>
+
+      <div class="findings-layout">
+        <aside class="card findings-list-card">
+          <div class="card-head"><h2>Finding List</h2></div>
+          <div id="findingsList" class="findings-list"></div>
+        </aside>
+
+        <section class="card findings-detail-card">
+          <div class="card-head" id="detailPanelHead">
+            <h2 id="detailTitle">Selected Finding</h2>
+            <span id="severityBadge" class="badge">&mdash;</span>
+          </div>
+          <dl class="meta-grid">
+            <div><dt>Rule</dt><dd class="mono" id="detailRule">&mdash;</dd></div>
+            <div><dt>Session</dt><dd class="mono" id="detailSession">&mdash;</dd></div>
+            <div><dt>ACAP</dt><dd class="mono" id="detailAcap">&mdash;</dd></div>
+            <div><dt>Outcome</dt><dd id="detailOutcome">&mdash;</dd></div>
+          </dl>
+
+          <section class="subsection">
+            <h3>What Happened</h3>
+            <p class="body-text" id="detailDescription">&mdash;</p>
+          </section>
+
+          <section class="subsection">
+            <h3>Why It Matters</h3>
+            <p class="body-text" id="detailWhyMatters">&mdash;</p>
+          </section>
+
+          <section class="subsection">
+            <h3>Recommendation</h3>
+            <p class="body-text" id="detailRecommendation">&mdash;</p>
+          </section>
+
+          <section class="subsection" id="controlSection">
+            <h3>Failed Control</h3>
+            <dl class="meta-grid">
+              <div><dt>Control ID</dt><dd class="mono" id="detailControlId">&mdash;</dd></div>
+              <div class="wide"><dt>Control Title</dt><dd id="detailControlTitle">&mdash;</dd></div>
+            </dl>
+          </section>
+
+          <section class="subsection" id="frameworkSection">
+            <h3>Framework Mappings</h3>
+            <div id="frameworkMappings" class="framework-grid"></div>
+          </section>
+
+          <section class="subsection">
+            <h3>Linked Evidence Event IDs</h3>
+            <div id="eventIds" class="id-list"></div>
+          </section>
+
+          <section class="subsection">
+            <h3>Finding Timeline</h3>
+            <ol id="timeline" class="timeline"></ol>
+          </section>
+        </section>
+      </div>
+    </div>
+
+    <!-- ---------------------------- Assessment ---------------------------- -->
+    <div id="tab-assessment" class="tab-panel">
+      <header class="tab-header">
+        <h1>Assessment</h1>
+        <p class="tab-subtitle">Governance assessment and framework analysis.</p>
+      </header>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Latest Assessment</h2>
+          <span class="badge" id="overallStatusBadge">&mdash;</span>
+        </div>
+        <div id="assessmentContent">
+          <dl class="meta-grid">
+            <div><dt>Assessment ID</dt><dd class="mono" id="assessmentId">&mdash;</dd></div>
+            <div><dt>Assessed At</dt><dd id="assessmentTime">&mdash;</dd></div>
+            <div><dt>Evidence Confidence</dt><dd id="assessmentConfidence">&mdash;</dd></div>
+            <div><dt>Failed Controls</dt><dd class="mono" id="assessmentControls">&mdash;</dd></div>
+          </dl>
+          <div class="card-grid-2 nested">
+            <div class="subsection">
+              <h3>Framework Status</h3>
+              <div class="table-wrap">
+                <table class="gov-table" id="frameworkStatusTable">
+                  <thead><tr><th>Framework</th><th>Status</th></tr></thead>
+                  <tbody id="frameworkStatusBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="subsection">
+              <h3>Recommended Actions</h3>
+              <ul id="recommendedActions" class="action-list"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="card-grid-2">
+        <section class="card">
+          <div class="card-head"><h2>Risk Profile</h2></div>
+          <dl class="meta-grid">
+            <div class="wide"><dt>Use Case</dt><dd id="riskUseCase">&mdash;</dd></div>
+            <div><dt>Environment</dt><dd id="riskEnvironment">&mdash;</dd></div>
+            <div><dt>Authority Level</dt><dd id="riskAuthority">&mdash;</dd></div>
+            <div><dt>Autonomy Level</dt><dd id="riskAutonomy">&mdash;</dd></div>
+            <div><dt>Data Sensitivity</dt><dd id="riskDataSensitivity">&mdash;</dd></div>
+            <div><dt>Side Effects</dt><dd id="riskSideEffects">&mdash;</dd></div>
+            <div><dt>Approval Model</dt><dd id="riskApprovalModel">&mdash;</dd></div>
+            <div><dt>Jurisdiction</dt><dd id="riskJurisdiction">&mdash;</dd></div>
+          </dl>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Framework Applicability</h2></div>
+          <div class="table-wrap">
+            <table class="gov-table" id="applicabilityTable">
+              <thead><tr><th>Framework</th><th>Applicable</th><th>Reason</th></tr></thead>
+              <tbody id="applicabilityBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============================ Edit modal ============================ -->
+<div id="editCapabilityModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+  <div class="modal-dialog">
+    <div class="card-head">
+      <h2 id="editModalTitle">Edit Capability</h2>
+      <button type="button" class="modal-close" id="editModalClose" aria-label="Close">&times;</button>
+    </div>
+    <form id="editCapabilityForm" class="edit-form">
+      <input type="hidden" id="editCapId" />
+      <label for="editActionType">Action Type</label>
+      <select id="editActionType">
+        <option value="">-- keep --</option>
+        <option value="read">read</option>
+        <option value="write">write</option>
+        <option value="delete">delete</option>
+        <option value="communicate">communicate</option>
+        <option value="execute">execute</option>
+        <option value="unknown">unknown</option>
+      </select>
+
+      <label for="editRisk">Risk</label>
+      <select id="editRisk">
+        <option value="">-- keep --</option>
+        <option value="high">high</option>
+        <option value="medium">medium</option>
+        <option value="low">low</option>
+      </select>
+
+      <label for="editDataClasses">Data Classes</label>
+      <input type="text" id="editDataClasses" class="form-input" placeholder="e.g. financial, contact" />
+
+      <label class="checkbox-label"><input type="checkbox" id="editApprovalRequired" /> Approval Required</label>
+      <label class="checkbox-label"><input type="checkbox" id="editSideEffect" /> External Side Effect</label>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Save Changes</button>
+        <button type="button" class="btn-secondary" id="editModalCancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="./assets/demo-data.js"></script>
+<script src="./assets/dashboard.js"></script>
+</body>
+</html>

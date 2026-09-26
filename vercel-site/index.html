@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentGov — Runtime Evidence for AI Governance</title>
+  <meta name="description" content="Scan your backend, discover AI capabilities, review authorization policies, monitor live model/tool behavior, and generate evidence-backed assessments." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+  <link rel="canonical" href="./" />
+  <meta name="theme-color" content="#1a5c3a" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="AgentGov — Runtime Evidence for AI Governance" />
+  <meta property="og:description" content="Scanner suggests. Human approves. Runtime proves. Rescan shows drift." />
+  <meta property="og:site_name" content="AgentGov" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AgentGov — Runtime Evidence for AI Governance" />
+  <meta name="twitter:description" content="Scanner suggests. Human approves. Runtime proves. Rescan shows drift." />
+</head>
+<body>
+
+<!-- ============================================================
+     Navigation
+     ============================================================ -->
+<nav id="mainNav" class="nav">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-logo">Agent<span>Gov</span></a>
+    <ul id="navLinks" class="nav-links">
+      <li><a href="#scanner">Scanner</a></li>
+      <li><a href="#acap">ACAP</a></li>
+      <li><a href="#monitoring">Monitoring</a></li>
+      <li><a href="#adapters">Adapters</a></li>
+      <li><a href="#assessment">Assessment</a></li>
+      <li><a href="./dashboard.html" class="nav-cta">Live Dashboard</a></li>
+    </ul>
+    <button id="navHamburger" class="nav-hamburger" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ============================================================
+     Section 1: Hero
+     ============================================================ -->
+<section id="hero" class="hero-section">
+  <div class="container">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <span class="section-label">AI Governance Platform</span>
+        <h1>Know what your AI system can do&mdash;<br /><span class="accent-text">and what it actually did.</span></h1>
+        <p class="hero-tagline">
+          Scan backend code, discover AI capabilities, approve authorization policies, and monitor live model and tool behavior through one privacy-safe platform.
+        </p>
+        <div class="hero-ctas">
+          <a href="#scanner" class="btn btn-primary">Explore Scanner</a>
+          <a href="./dashboard.html" class="btn btn-secondary">View Live Demo</a>
+        </div>
+      </div>
+
+      <!-- Scanner visual (dark developer accent) -->
+      <div class="hero-visual" data-reveal>
+        <div class="hero-scan-beam"></div>
+        <div class="hero-visual-label">Codebase Scanner</div>
+        <div class="hero-code-lines">
+          <div class="hero-code-line"></div>
+          <div class="hero-code-line"></div>
+          <div class="hero-code-line"></div>
+          <div class="hero-code-line"></div>
+          <div class="hero-code-line"></div>
+        </div>
+        <div class="hero-capability-cards">
+          <div class="hero-cap-card">
+            <span class="hero-cap-name">refund_execute</span>
+            <div class="hero-cap-pills">
+              <span class="hero-pill hero-pill-write">Write</span>
+              <span class="hero-pill hero-pill-approval">Approval Required</span>
+              <span class="hero-pill hero-pill-risk">High Risk</span>
+            </div>
+          </div>
+          <div class="hero-cap-card">
+            <span class="hero-cap-name">send_invoice_email</span>
+            <div class="hero-cap-pills">
+              <span class="hero-pill hero-pill-data">Customer Data</span>
+              <span class="hero-pill hero-pill-approval">Conditional</span>
+            </div>
+          </div>
+          <div class="hero-cap-card">
+            <span class="hero-cap-name">delete_customer</span>
+            <div class="hero-cap-pills">
+              <span class="hero-pill hero-pill-write">Delete</span>
+              <span class="hero-pill hero-pill-risk">High Risk</span>
+              <span class="hero-pill hero-pill-approval">Approval Required</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Section 2: Scroll Timeline — "How it works"
+     ============================================================ -->
+<section id="timeline" class="timeline-section">
+  <div class="container">
+    <div class="timeline-header">
+      <span class="section-label">How It Works</span>
+      <h2>From codebase to <span class="accent-text">governed AI system</span></h2>
+      <p class="section-subtitle section-subtitle-center">
+        AgentGov turns scattered AI behavior into reviewed capabilities, runtime evidence, and assessment-ready governance records.
+      </p>
+    </div>
+
+    <div class="timeline-container">
+      <!-- Left: sticky context text -->
+      <div class="timeline-sticky" id="timelineStickyText">
+        <div class="timeline-sticky-label">Current Step</div>
+        <h3 id="stickyTitle">Scan backend code</h3>
+        <p id="stickyDesc">Detect routes, model calls, tools, risky functions, and side-effectful actions across your entire codebase.</p>
+        <p class="timeline-sticky-example" id="stickyExample">Example: refund, invoice, email, delete, update, approve.</p>
+      </div>
+
+      <!-- Right: vertical timeline track -->
+      <div class="timeline-track" id="timelineTrack">
+        <div class="timeline-progress" id="timelineProgress"></div>
+
+        <div class="timeline-step active" data-step="0">
+          <div class="timeline-circle">1</div>
+          <div class="timeline-step-title">Scan backend code</div>
+          <div class="timeline-step-desc">Detect routes, model calls, tools, risky functions, and side-effectful actions.</div>
+        </div>
+
+        <div class="timeline-step" data-step="1">
+          <div class="timeline-circle">2</div>
+          <div class="timeline-step-title">Suggest governed capabilities</div>
+          <div class="timeline-step-desc">Group thousands of functions into a small review queue with confidence, evidence, and suggested action type.</div>
+        </div>
+
+        <div class="timeline-step" data-step="2">
+          <div class="timeline-circle">3</div>
+          <div class="timeline-step-title">Review and approve ACAP</div>
+          <div class="timeline-step-desc">Teams approve, edit, or reject suggestions. Reviewed capabilities become authorization boundaries.</div>
+        </div>
+
+        <div class="timeline-step" data-step="3">
+          <div class="timeline-circle">4</div>
+          <div class="timeline-step-title">Monitor runtime behavior</div>
+          <div class="timeline-step-desc">Middleware, model wrappers, callbacks, logs, and tool hooks capture what actually happened.</div>
+        </div>
+
+        <div class="timeline-step" data-step="4">
+          <div class="timeline-circle">5</div>
+          <div class="timeline-step-title">Detect findings and gaps</div>
+          <div class="timeline-step-desc">Compare observed behavior against approved ACAP. Highlight missing approvals, unknown actions, and uncovered routes.</div>
+        </div>
+
+        <div class="timeline-step" data-step="5">
+          <div class="timeline-circle">6</div>
+          <div class="timeline-step-title">Generate assessment evidence</div>
+          <div class="timeline-step-desc">Map findings to controls and frameworks with supporting traces and remediation guidance.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Section 3: Scanner Discovery
+     ============================================================ -->
+<section id="scanner" class="section section-warm" data-reveal>
+  <div class="container">
+    <span class="section-label">Discovery</span>
+    <h2>Scan your codebase. <span class="accent-text">Discover governed capabilities.</span></h2>
+    <p class="section-subtitle" style="margin-bottom: 40px;">The scanner analyzes source code, identifies tools and AI-driven functions, classifies risk, and suggests governance policies before a single line of instrumentation.</p>
+
+    <div class="scanner-stats" data-reveal data-reveal-delay="1">
+      <div class="stat-card">
+        <div class="stat-value text-green">1,248</div>
+        <div class="stat-label">Files Scanned</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value text-green">43</div>
+        <div class="stat-label">Capabilities Found</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value text-rose">11</div>
+        <div class="stat-label">High Risk</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value text-muted">14,777</div>
+        <div class="stat-label">Helpers Ignored</div>
+      </div>
+    </div>
+
+    <div class="capability-cards-grid" data-reveal data-reveal-delay="2">
+      <!-- Capability card: refund_execute -->
+      <div class="capability-card expanded">
+        <div class="capability-header">
+          <span class="capability-name">refund_execute</span>
+          <span class="badge badge-high">High Risk</span>
+        </div>
+        <div class="capability-body">
+          <div class="capability-meta">
+            <div class="meta-item">
+              <span class="meta-label">Action</span>
+              <span class="meta-value">Write</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Approval</span>
+              <span class="meta-value">Required</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Data</span>
+              <span class="meta-value">Financial + Customer</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Confidence</span>
+              <span class="meta-value">91%</span>
+            </div>
+          </div>
+          <div class="capability-evidence">
+            <h5>Evidence</h5>
+            <ul class="evidence-list">
+              <li>Function name contains "refund"</li>
+              <li>Calls payment provider API</li>
+              <li>Amount parameter detected</li>
+              <li>Used inside POST /refund route</li>
+            </ul>
+          </div>
+          <div class="confidence-bar"><div class="confidence-fill" style="width: 91%"></div></div>
+          <div class="capability-actions">
+            <button class="btn btn-sm btn-approve">Approve</button>
+            <button class="btn btn-sm btn-edit">Edit</button>
+            <button class="btn btn-sm btn-reject">Reject</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Capability card: send_invoice_email -->
+      <div class="capability-card expanded">
+        <div class="capability-header">
+          <span class="capability-name">send_invoice_email</span>
+          <span class="badge badge-medium">Medium Risk</span>
+        </div>
+        <div class="capability-body">
+          <div class="capability-meta">
+            <div class="meta-item">
+              <span class="meta-label">Action</span>
+              <span class="meta-value">Communicate</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Approval</span>
+              <span class="meta-value">Conditional</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Data</span>
+              <span class="meta-value">Financial + Customer</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Confidence</span>
+              <span class="meta-value">86%</span>
+            </div>
+          </div>
+          <div class="capability-evidence">
+            <h5>Evidence</h5>
+            <ul class="evidence-list">
+              <li>Function name contains "send" and "email"</li>
+              <li>Uses SMTP client or email service API</li>
+              <li>Accesses customer email address field</li>
+              <li>Invoice template rendering detected</li>
+              <li>Called inside POST /invoice route</li>
+            </ul>
+          </div>
+          <div class="confidence-bar"><div class="confidence-fill" style="width: 86%"></div></div>
+          <div class="capability-actions">
+            <button class="btn btn-sm btn-approve">Approve</button>
+            <button class="btn btn-sm btn-edit">Edit</button>
+            <button class="btn btn-sm btn-reject">Reject</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Capability card: delete_customer -->
+      <div class="capability-card expanded">
+        <div class="capability-header">
+          <span class="capability-name">delete_customer</span>
+          <span class="badge badge-high">High Risk</span>
+        </div>
+        <div class="capability-body">
+          <div class="capability-meta">
+            <div class="meta-item">
+              <span class="meta-label">Action</span>
+              <span class="meta-value">Delete</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Approval</span>
+              <span class="meta-value">Required</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Data</span>
+              <span class="meta-value">Customer Data</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Confidence</span>
+              <span class="meta-value">94%</span>
+            </div>
+          </div>
+          <div class="capability-evidence">
+            <h5>Evidence</h5>
+            <ul class="evidence-list">
+              <li>Function name contains "delete" and "customer"</li>
+              <li>Executes DELETE query on customers table</li>
+              <li>Cascading deletion of related records detected</li>
+              <li>No soft-delete fallback present</li>
+              <li>Called inside DELETE /customers/:id route</li>
+            </ul>
+          </div>
+          <div class="confidence-bar"><div class="confidence-fill" style="width: 94%"></div></div>
+          <div class="capability-actions">
+            <button class="btn btn-sm btn-approve">Approve</button>
+            <button class="btn btn-sm btn-edit">Edit</button>
+            <button class="btn btn-sm btn-reject">Reject</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Section 4: Review to ACAP
+     ============================================================ -->
+<section id="acap" class="section section-ivory" data-reveal>
+  <div class="container">
+    <span class="section-label">Authorization</span>
+    <h2>Turn reviewed capabilities into <span class="accent-text">an authorization contract.</span></h2>
+    <p class="section-subtitle">Developers do not need to tag every function manually. AgentGov narrows the codebase into a reviewable set of meaningful capabilities, explains why each one matters, and lets teams approve or edit the authorization model.</p>
+
+    <!-- 3-step flow -->
+    <div class="review-flow-visual" data-reveal data-reveal-delay="1">
+      <div class="review-flow-step">
+        <div class="review-flow-circle">1</div>
+        <h4>Scanner Suggests</h4>
+        <p>Static analysis discovers tools, classifies risk, and proposes action types.</p>
+      </div>
+      <div class="review-flow-arrow">&rarr;</div>
+      <div class="review-flow-step">
+        <div class="review-flow-circle">2</div>
+        <h4>Team Reviews</h4>
+        <p>Engineers approve, edit, or reject each suggestion. Only human-confirmed decisions become policy.</p>
+      </div>
+      <div class="review-flow-arrow">&rarr;</div>
+      <div class="review-flow-step">
+        <div class="review-flow-circle">3</div>
+        <h4>ACAP Generated</h4>
+        <p>Approved decisions compile into a structured authorization contract the runtime enforces.</p>
+      </div>
+    </div>
+
+    <!-- ACAP detail -->
+    <div class="acap-grid" data-reveal data-reveal-delay="2">
+      <div class="acap-yaml">
+<span class="key">capability:</span> <span class="value">refund_execute</span>
+<span class="key">action_type:</span> <span class="value">write</span>
+<span class="key">approval_required:</span> <span class="bool">true</span>
+<span class="key">data_classes:</span>
+  <span class="list-item">- financial</span>
+  <span class="list-item">- customer_data</span>
+<span class="key">external_side_effect:</span> <span class="bool">true</span>
+<span class="key">max_amount:</span> <span class="value">500.00</span>
+<span class="key">status:</span> <span class="value">approved</span>
+<span class="key">reviewed_by:</span> <span class="value">compliance-team</span>
+      </div>
+
+      <div>
+        <div class="acap-english">
+          <h4>Plain English</h4>
+          <p>This action is allowed only when trusted approval is present. It handles financial and customer data, has an external side effect, and must not exceed $500.</p>
+        </div>
+        <div class="acap-summary-grid">
+          <div class="acap-summary-card">
+            <h4>Allowed Capabilities</h4>
+            <p>43 tools, 29 governed</p>
+          </div>
+          <div class="acap-summary-card">
+            <h4>Approval Required</h4>
+            <p>11 high-risk tools</p>
+          </div>
+          <div class="acap-summary-card">
+            <h4>Data Boundaries</h4>
+            <p>Financial, Customer, PII</p>
+          </div>
+          <div class="acap-summary-card">
+            <h4>Reassessment</h4>
+            <p>On capability change</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Section 5: Runtime Monitoring — dark developer accent
+     ============================================================ -->
+<section id="monitoring" class="section section-dark" data-reveal>
+  <div class="container">
+    <span class="section-label section-label-dark">Runtime</span>
+    <h2>Monitor what <span class="accent-text">actually happens</span> at runtime.</h2>
+    <p class="section-subtitle" style="margin-bottom: 48px;">Every model call, tool execution, and agent decision is captured as a structured governance event with safe metadata.</p>
+
+    <div class="monitoring-grid">
+      <div class="monitoring-text">
+        <h3>POST /refund trace</h3>
+        <p>
+          A single user request triggers a chain of observable events. Each event captures provider, model, tool, status, duration, approval state, data classification, and trace ID&mdash;without exposing sensitive content.
+        </p>
+
+        <div class="privacy-badge" data-reveal data-reveal-delay="2">
+          <div class="privacy-badge-icon">P</div>
+          <p><strong>Privacy-safe by default.</strong> No raw prompts or responses stored. Only hashes, metadata, and governance evidence. Content capture is opt-in and redacted.</p>
+        </div>
+      </div>
+
+      <div class="event-stream" data-reveal data-reveal-delay="1">
+        <div class="event-card">
+          <div class="event-icon request">IN</div>
+          <div class="event-details">
+            <div class="event-name">Inbound Request</div>
+            <div class="event-meta">POST /refund &middot; trace:7f3a9b</div>
+          </div>
+          <span class="event-status ok">200</span>
+        </div>
+
+        <div class="event-card">
+          <div class="event-icon llm">AI</div>
+          <div class="event-details">
+            <div class="event-name">LLM Call &mdash; OpenAI GPT-4.1-mini</div>
+            <div class="event-meta">tokens: 1,240 &middot; 620ms &middot; prompt_hash:a8c2e1</div>
+          </div>
+          <span class="event-status ok">ok</span>
+        </div>
+
+        <div class="event-card">
+          <div class="event-icon tool">FN</div>
+          <div class="event-details">
+            <div class="event-name">Tool: refund_execute</div>
+            <div class="event-meta">action: write &middot; approval: granted &middot; $48.00</div>
+          </div>
+          <span class="event-status ok">ok</span>
+        </div>
+
+        <div class="event-card">
+          <div class="event-icon tool">FN</div>
+          <div class="event-details">
+            <div class="event-name">Tool: send_email</div>
+            <div class="event-meta">action: communicate &middot; recipient_hash:b7d412</div>
+          </div>
+          <span class="event-status ok">ok</span>
+        </div>
+
+        <div class="event-card">
+          <div class="event-icon response">OK</div>
+          <div class="event-details">
+            <div class="event-name">Response</div>
+            <div class="event-meta">200 OK &middot; total: 1,340ms &middot; 4 events</div>
+          </div>
+          <span class="event-status ok">done</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Section 6: Adapters
+     ============================================================ -->
+<section id="adapters" class="section section-warm" data-reveal>
+  <div class="container">
+    <span class="section-label">Integration</span>
+    <h2>Connect the AI stack <span class="accent-text">you already use.</span></h2>
+    <p class="section-subtitle">Drop-in adapters capture governance evidence from your existing frameworks. No rewrites, no vendor lock-in.</p>
+
+    <div class="adapter-grid" data-reveal data-reveal-delay="1">
+      <div class="adapter-card">
+        <div class="adapter-header">
+          <span class="adapter-name">Codebase Scanner</span>
+          <span class="badge badge-violet">Discovery</span>
+        </div>
+        <p class="adapter-purpose">Capability discovery through static analysis before any runtime instrumentation is deployed.</p>
+        <div class="adapter-code">agent-governance scan ./my-agent</div>
+      </div>
+
+      <div class="adapter-card">
+        <div class="adapter-header">
+          <span class="adapter-name">FastAPI</span>
+          <span class="badge badge-low">Active</span>
+        </div>
+        <p class="adapter-purpose">Creates request-level governance traces for backend workflows with route, method, status, and timing.</p>
+        <div class="adapter-code">app.add_middleware(GovernanceMiddleware)</div>
+      </div>
+
+      <div class="adapter-card">
+        <div class="adapter-header">
+          <span class="adapter-name">OpenAI</span>
+          <span class="badge badge-low">Active</span>
+        </div>
+        <p class="adapter-purpose">Captures model, tokens, latency, prompt hash, and response hash for every API call.</p>
+        <div class="adapter-code">client = wrap_openai(OpenAI(), gov)</div>
+      </div>
+
+      <div class="adapter-card">
+        <div class="adapter-header">
+          <span class="adapter-name">Anthropic</span>
+          <span class="badge badge-low">Active</span>
+        </div>
+        <p class="adapter-purpose">Messages API calls, stop reason, usage metrics, and error events with full trace correlation.</p>
+        <div class="adapter-code">client = wrap_anthropic(Anthropic(), gov)</div>
+      </div>
+
+      <div class="adapter-card">
+        <div class="adapter-header">
+          <span class="adapter-name">LangChain / LangGraph</span>
+          <span class="badge badge-low">Active</span>
+        </div>
+        <p class="adapter-purpose">Agent, chain, tool, and LLM events with full run hierarchy and parent/child traces.</p>
+        <div class="adapter-code">chain.invoke(input, config=gov.config())</div>
+      </div>
+
+      <div class="adapter-card">
+        <div class="adapter-header">
+          <span class="adapter-name">Custom Python Tools</span>
+          <span class="badge badge-low">Active</span>
+        </div>
+        <p class="adapter-purpose">Refunds, emails, invoices, database updates&mdash;any Python function with side effects.</p>
+        <div class="adapter-code">@gov.tool(action="write", data=["financial"])</div>
+      </div>
+
+      <div class="adapter-card">
+        <div class="adapter-header">
+          <span class="adapter-name">Application Logs</span>
+          <span class="badge badge-cyan">Supported</span>
+        </div>
+        <p class="adapter-purpose">Converts existing logs into lower-confidence evidence signals for coverage analysis.</p>
+        <div class="adapter-code">gov.ingest_log(log_entry, confidence="medium")</div>
+      </div>
+
+      <div class="adapter-card">
+        <div class="adapter-header">
+          <span class="adapter-name">Evidence API</span>
+          <span class="badge badge-blue">Core</span>
+        </div>
+        <p class="adapter-purpose">Central ingestion endpoint for all evidence events, findings, and assessment records.</p>
+        <div class="adapter-code">POST /evidence/events</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Section 7: Evidence Confidence
+     ============================================================ -->
+<section id="confidence" class="section section-ivory" data-reveal>
+  <div class="container">
+    <span class="section-label">Trust</span>
+    <h2>Not all evidence is equal. <span class="accent-text">AgentGov shows provenance.</span></h2>
+    <p class="section-subtitle section-subtitle-center">Every piece of evidence carries a confidence level and source attribution so you know exactly what you can trust and what needs review.</p>
+
+    <div class="confidence-grid" data-reveal data-reveal-delay="1">
+      <div class="confidence-card">
+        <h4>SDK Event</h4>
+        <p class="source">Runtime instrumentation</p>
+        <span class="badge badge-low">High Confidence</span>
+        <div class="confidence-indicator high"></div>
+      </div>
+
+      <div class="confidence-card">
+        <h4>Structured Log</h4>
+        <p class="source">Application logs</p>
+        <span class="badge badge-medium">Medium Confidence</span>
+        <div class="confidence-indicator medium"></div>
+      </div>
+
+      <div class="confidence-card">
+        <h4>Scanner Suggestion</h4>
+        <p class="source">Static analysis</p>
+        <span class="badge badge-blue">Suggested</span>
+        <div class="confidence-indicator suggested"></div>
+      </div>
+
+      <div class="confidence-card">
+        <h4>AI Classification</h4>
+        <p class="source">AI-assisted enrichment</p>
+        <span class="badge badge-violet">Needs Review</span>
+        <div class="confidence-indicator review"></div>
+      </div>
+    </div>
+
+    <div class="philosophy-quote" data-reveal data-reveal-delay="2">
+      <span class="accent-text">Scanner suggests. Human approves. Runtime proves. Rescan shows drift.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Section 8: Assessment Dashboard — dark developer accent
+     ============================================================ -->
+<section id="assessment" class="section section-dark" data-reveal>
+  <div class="container">
+    <span class="section-label section-label-dark">Assessment</span>
+    <h2>From raw behavior to <span class="accent-text">governance assessment.</span></h2>
+    <p class="section-subtitle" style="margin-bottom: 40px;">Evidence rolls up into a structured assessment with findings, framework mappings, and remediation guidance.</p>
+
+    <div class="assessment-kpi-strip" data-reveal data-reveal-delay="1">
+      <div class="assessment-kpi">
+        <div class="kpi-value" style="color: #60a5fa;">support-api</div>
+        <div class="kpi-label">System</div>
+      </div>
+      <div class="assessment-kpi">
+        <div class="kpi-value" style="color: #fb7185;">Remediation</div>
+        <div class="kpi-label">Status</div>
+      </div>
+      <div class="assessment-kpi">
+        <div class="kpi-value" style="color: #60a5fa;">440</div>
+        <div class="kpi-label">Events</div>
+      </div>
+      <div class="assessment-kpi">
+        <div class="kpi-value" style="color: #fb7185;">2</div>
+        <div class="kpi-label">Findings</div>
+      </div>
+      <div class="assessment-kpi">
+        <div class="kpi-value" style="font-size: 0.85rem; color: #fbbf24;">AGT-AUTH-001</div>
+        <div class="kpi-label">Failed Control</div>
+      </div>
+      <div class="assessment-kpi">
+        <div class="kpi-value" style="color: var(--green-light);">87%</div>
+        <div class="kpi-label">Coverage</div>
+      </div>
+      <div class="assessment-kpi">
+        <div class="kpi-value" style="color: var(--green-light);">Reviewed</div>
+        <div class="kpi-label">ACAP Status</div>
+      </div>
+    </div>
+
+    <div class="finding-card" data-reveal data-reveal-delay="2">
+      <div class="finding-title">Refund executed without trusted approval</div>
+      <div class="finding-evidence">
+        <h5>Evidence Chain</h5>
+        <ul>
+          <li>POST /refund trace &mdash; trace:7f3a9b</li>
+          <li>OpenAI model call &mdash; GPT-4.1-mini, 1,240 tokens</li>
+          <li>refund_execute tool event &mdash; $48.00, no approval token</li>
+          <li>ACAP requires approval_required: true</li>
+        </ul>
+      </div>
+      <div class="finding-impact">
+        <h5>Impact</h5>
+        <ul>
+          <li>ACAP authorization boundary violated</li>
+          <li>NIST AI RMF &mdash; Govern 1.1 applicable</li>
+          <li>OWASP Agentic Top 10 &mdash; A01 risk relevant</li>
+          <li>ISO 42001 &mdash; evidence gap identified</li>
+        </ul>
+      </div>
+      <a href="./dashboard.html" class="btn btn-sm btn-primary-dark" style="margin-top: 12px;">View in Dashboard</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Section 9: Coverage Gaps
+     ============================================================ -->
+<section id="coverage" class="section section-warm" data-reveal>
+  <div class="container">
+    <span class="section-label">Gaps</span>
+    <h2>Find what is <span class="accent-text">not yet governed.</span></h2>
+    <p class="section-subtitle">The platform identifies coverage gaps&mdash;capabilities that exist in code but lack runtime evidence or governance policies.</p>
+
+    <div class="coverage-list" data-reveal data-reveal-delay="1">
+      <div class="coverage-item">
+        <div class="coverage-icon">!</div>
+        <div class="coverage-text">Scanner found <code>refund_execute</code>, but no runtime tool event was observed in the last 30 days.</div>
+      </div>
+      <div class="coverage-item">
+        <div class="coverage-icon">!</div>
+        <div class="coverage-text"><code>POST /invoice</code> contains LLM calls but no approved business capability in the ACAP.</div>
+      </div>
+      <div class="coverage-item">
+        <div class="coverage-icon">!</div>
+        <div class="coverage-text">Logs mention "email sent," but no governed <code>send_email</code> tool exists in the capability catalog.</div>
+      </div>
+      <div class="coverage-item">
+        <div class="coverage-icon">!</div>
+        <div class="coverage-text"><code>delete_customer</code> is approved in the ACAP but has zero runtime events&mdash;either unused or uninstrumented.</div>
+      </div>
+    </div>
+
+    <div style="text-align: center;" data-reveal data-reveal-delay="2">
+      <a href="#scanner" class="btn btn-primary">Generate Instrumentation Plan</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Section 10: Final CTA
+     ============================================================ -->
+<section id="cta" class="cta-section" data-reveal>
+  <div class="container">
+    <div class="cta-content">
+      <span class="section-label">Get Started</span>
+      <h2>Move from AI experiments to <span class="accent-text">governed AI systems.</span></h2>
+      <p class="section-subtitle section-subtitle-center">Discover capabilities, approve policies, monitor runtime behavior, and generate evidence-backed assessments from one platform.</p>
+      <div class="cta-buttons">
+        <a href="./dashboard.html" class="btn btn-primary-dark">Open Demo Dashboard</a>
+        <a href="#adapters" class="btn btn-secondary-dark">Review SDK</a>
+        <a href="#scanner" class="btn btn-secondary-dark">Approve Next Milestone</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Footer
+     ============================================================ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#hero" class="footer-logo">Agent<span>Gov</span></a>
+        <p class="footer-desc">Runtime evidence for AI governance. Scan codebases, review capabilities, monitor runtime behavior, and generate assessment-ready governance records.</p>
+      </div>
+      <div class="footer-col">
+        <h5 class="footer-col-title">Product</h5>
+        <ul>
+          <li><a href="#scanner">Scanner</a></li>
+          <li><a href="#acap">ACAP</a></li>
+          <li><a href="#monitoring">Monitoring</a></li>
+          <li><a href="#assessment">Assessment</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5 class="footer-col-title">Platform</h5>
+        <ul>
+          <li><a href="#adapters">SDK &amp; Adapters</a></li>
+          <li><a href="./dashboard.html">Demo Dashboard</a></li>
+          <li><a href="#confidence">Governance</a></li>
+          <li><a href="#coverage">Coverage</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5 class="footer-col-title">Resources</h5>
+        <ul>
+          <li><a href="#acap">Documentation</a></li>
+          <li><a href="#assessment">Frameworks</a></li>
+          <li><a href="#adapters">Integrations</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>AgentGov &mdash; Scanner suggests. Human approves. Runtime proves. Rescan shows drift.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="./assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+{
+  "candidates": [
+    {
+      "call_chain": [
+        "create_airspace_restriction -> session.add",
+        "create_airspace_restriction -> session.commit"
+      ],
+      "capability_id": "CAP-bb755581bc10",
+      "confidence": 0.9,
+      "confidence_source": "sink_reachability",
+      "evidence": [
+        {
+          "detail": "session.add",
+          "file_path": "app.py",
+          "line": 58,
+          "type": "sink_call"
+        },
+        {
+          "detail": "session.commit",
+          "file_path": "app.py",
+          "line": 59,
+          "type": "sink_call"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app.py",
+      "line_end": 64,
+      "line_start": 50,
+      "module_path": "app",
+      "name": "create_airspace_restriction",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": [
+        "database"
+      ]
+    },
+    {
+      "call_chain": [
+        "publish_notam_alert -> requests.post"
+      ],
+      "capability_id": "CAP-331660b672d2",
+      "confidence": 0.95,
+      "confidence_source": "sink_reachability",
+      "evidence": [
+        {
+          "detail": "requests.post",
+          "file_path": "app.py",
+          "line": 69,
+          "type": "sink_call"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 76,
+      "line_start": 68,
+      "module_path": "app",
+      "name": "publish_notam_alert",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [
+        "revoke_drone_clearance -> session.delete",
+        "revoke_drone_clearance -> session.commit"
+      ],
+      "capability_id": "CAP-e7957a07599d",
+      "confidence": 0.9,
+      "confidence_source": "sink_reachability",
+      "evidence": [
+        {
+          "detail": "session.delete",
+          "file_path": "app.py",
+          "line": 84,
+          "type": "sink_call"
+        },
+        {
+          "detail": "session.commit",
+          "file_path": "app.py",
+          "line": 85,
+          "type": "sink_call"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app.py",
+      "line_end": 87,
+      "line_start": 80,
+      "module_path": "app",
+      "name": "revoke_drone_clearance",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "delete",
+      "suggested_approval_required": false,
+      "suggested_data_classes": [
+        "database"
+      ]
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-1deb2867dea6",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /airspace/restriction",
+          "file_path": "app.py",
+          "line": 112,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 117,
+      "line_start": 112,
+      "module_path": "app",
+      "name": "create_restriction_route",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-f73b176cd9dd",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /airspace/notam",
+          "file_path": "app.py",
+          "line": 121,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 125,
+      "line_start": 121,
+      "module_path": "app",
+      "name": "notam_route",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-51b1157ca766",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "DELETE /airspace/clearance/{clearance_id}",
+          "file_path": "app.py",
+          "line": 129,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 130,
+      "line_start": 129,
+      "module_path": "app",
+      "name": "revoke_clearance_route",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "delete",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-0533cda7ef32",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /airspace/export",
+          "file_path": "app.py",
+          "line": 134,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 135,
+      "line_start": 134,
+      "module_path": "app",
+      "name": "export_corridor_route",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-433a0d470edd",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name 'delete' matches risky pattern",
+          "file_path": "app.py",
+          "line": 30,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app.py",
+      "line_end": 31,
+      "line_start": 30,
+      "module_path": "app",
+      "name": "delete",
+      "review_status": "pending",
+      "risk": "high",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "delete",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    }
+  ],
+  "generated_at": "2026-09-12T01:55:47.013499+00:00",
+  "model_surface": [
+    {
+      "call_chain": [
+        "generate_airspace_summary -> openai.chat.completions.create"
+      ],
+      "category": "model_usage",
+      "file_path": "app.py",
+      "line": 100,
+      "module_path": "app",
+      "name": "generate_airspace_summary",
+      "provider": "openai"
+    }
+  ],
+  "project_hash": "sha256:74670480d49b3a3d5dc51698fae2cb13ee460102e30f2f30467a3e281bbbba94",
+  "scan_summary": {
+    "candidates_found": 8,
+    "files_scanned": 1,
+    "functions_seen": 18,
+    "high_risk_count": 1,
+    "ignored_helpers_count": 10,
+    "low_risk_count": 4,
+    "medium_risk_count": 3,
+    "model_surface_found": 1,
+    "unenumerated_surface": []
+  },
+  "scanner_version": "0.1.0",
+  "schema_version": "0.1",
+  "source": "deterministic_scanner"
+}

@@ -1,0 +1,241 @@
+{
+  "candidates": [
+    {
+      "call_chain": [],
+      "capability_id": "CAP-f0b694cce54c",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name 'update_leaderboard_score' matches risky pattern",
+          "file_path": "app.py",
+          "line": 56,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app.py",
+      "line_end": 58,
+      "line_start": 56,
+      "module_path": "app",
+      "name": "update_leaderboard_score",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-d69bcb462e49",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name 'send_match_invite' matches risky pattern",
+          "file_path": "app.py",
+          "line": 62,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app.py",
+      "line_end": 67,
+      "line_start": 62,
+      "module_path": "app",
+      "name": "send_match_invite",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "communicate",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-545bdf38c27a",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /store/purchase-skin",
+          "file_path": "app.py",
+          "line": 84,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 85,
+      "line_start": 84,
+      "module_path": "app",
+      "name": "purchase_skin_route",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-f3b622593f77",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /moderation/ban-player",
+          "file_path": "app.py",
+          "line": 89,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 90,
+      "line_start": 89,
+      "module_path": "app",
+      "name": "ban_player_route",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-ee4005bfbf52",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /leaderboard/update-score",
+          "file_path": "app.py",
+          "line": 94,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 95,
+      "line_start": 94,
+      "module_path": "app",
+      "name": "leaderboard_route",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-72100a7187f6",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /match/invite",
+          "file_path": "app.py",
+          "line": 99,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app.py",
+      "line_end": 100,
+      "line_start": 99,
+      "module_path": "app",
+      "name": "invite_route",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-1fc670899571",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name 'send_push' matches risky pattern",
+          "file_path": "app.py",
+          "line": 25,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app.py",
+      "line_end": 26,
+      "line_start": 25,
+      "module_path": "app",
+      "name": "send_push",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "communicate",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-bae4aff717f7",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name 'update_score' matches risky pattern",
+          "file_path": "app.py",
+          "line": 31,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app.py",
+      "line_end": 32,
+      "line_start": 31,
+      "module_path": "app",
+      "name": "update_score",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    }
+  ],
+  "generated_at": "2026-09-12T01:50:50.552929+00:00",
+  "model_surface": [
+    {
+      "call_chain": [
+        "generate_npc_dialogue -> openai.chat.completions.create"
+      ],
+      "category": "model_usage",
+      "file_path": "app.py",
+      "line": 72,
+      "module_path": "app",
+      "name": "generate_npc_dialogue",
+      "provider": "openai"
+    }
+  ],
+  "project_hash": "sha256:bcc3272b8514d5864697c579c8d8411053333652682b07266c7ec6fb55fa38a9",
+  "scan_summary": {
+    "candidates_found": 8,
+    "files_scanned": 1,
+    "functions_seen": 15,
+    "high_risk_count": 0,
+    "ignored_helpers_count": 7,
+    "low_risk_count": 4,
+    "medium_risk_count": 4,
+    "model_surface_found": 1,
+    "unenumerated_surface": []
+  },
+  "scanner_version": "0.1.0",
+  "schema_version": "0.1",
+  "source": "deterministic_scanner"
+}

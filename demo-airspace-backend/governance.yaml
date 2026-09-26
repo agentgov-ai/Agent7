@@ -1,0 +1,21 @@
+system_id: airspace-demo
+generated_from:
+  acap_version_id: ACAP-airspace-demo-v1
+  acap_version_number: 1
+  generated_at: '2026-09-12T01:58:53.859671+00:00'
+  source: evidence_api
+capabilities:
+- capability_id: CAP-bb755581bc10
+  name: create_airspace_restriction
+  module_path: app.create_airspace_restriction
+  action_type: write
+  status: approved
+  data_classes:
+  - database
+  external_side_effect: false
+- capability_id: CAP-331660b672d2
+  name: publish_notam_alert
+  module_path: app.publish_notam_alert
+  action_type: write
+  status: approved
+  external_side_effect: true

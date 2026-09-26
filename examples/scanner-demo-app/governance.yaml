@@ -1,0 +1,25 @@
+system_id: scanner-demo-real
+generated_from:
+  acap_version_id: ACAP-scanner-demo-real-v1
+  acap_version_number: 1
+  generated_at: '2026-09-11T19:22:07.826482+00:00'
+  source: evidence_api
+capabilities:
+- capability_id: CAP-0ce6a9aaa99a
+  name: refund_execute
+  module_path: app.refund_execute
+  action_type: write
+  status: approved
+  approval_required: true
+  data_classes:
+  - financial
+  external_side_effect: true
+- capability_id: CAP-cc82f085d3aa
+  name: send_invoice_email
+  module_path: app.send_invoice_email
+  action_type: communicate
+  status: approved
+  approval_required: true
+  data_classes:
+  - contact
+  external_side_effect: true
