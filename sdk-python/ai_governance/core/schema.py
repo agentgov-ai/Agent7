@@ -31,6 +31,7 @@ EVENT_TYPES = {
     "retriever_error",
     "approval_requested",
     "approval_decision",
+    "action_decision",
     "custom",
 }
 

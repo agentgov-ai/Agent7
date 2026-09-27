@@ -37,7 +37,9 @@ class EventBuilder:
         duration_ms: float | None = None,
         **details: Any,
     ) -> dict[str, Any]:
-        final = event_type.endswith(("_end", "_error"))
+        final = details.pop("_final", None)
+        if final is None:
+            final = event_type.endswith(("_end", "_error"))
         trace_id, span_id, parent_span_id = self.tracker.ids(run_id, parent_run_id, final=final)
         callback_context = details.pop("_callback_context", None) or {}
         session_id = self.tracker.session_id(run_id, parent_run_id, callback_context, final=final)

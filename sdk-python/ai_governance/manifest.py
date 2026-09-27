@@ -15,9 +15,18 @@ STATUS_MISSING_ATTRIBUTE = "missing_attribute"
 STATUS_UNSUPPORTED_TARGET = "unsupported_target"
 STATUS_SKIPPED_NOT_APPROVED = "skipped_not_approved"
 STATUS_ALREADY_WRAPPED = "already_wrapped"
+STATUS_WRAPPED_FOR_ENFORCEMENT = "wrapped_for_enforcement"
 
 # Statuses that permit instrumentation
 _APPROVED_STATUSES = frozenset({"approved", "approved_for_acap", "edited"})
+
+# Statuses a human explicitly refused. These are wrapped only in shadow/enforce
+# mode, so that Agent7 can block them before execution. In observe mode they
+# stay skipped, preserving historical behaviour.
+_DENIED_STATUSES = frozenset({"denied", "rejected"})
+
+# Never wrapped: the scanner or a reviewer said these are not real capabilities.
+_NEVER_WRAP_STATUSES = frozenset({"false_positive", "not_a_capability"})
 
 # Marker attribute set on wrapped functions to prevent double-wrapping
 WRAPPED_MARKER = "__ai_governance_wrapped__"
@@ -54,7 +63,35 @@ def load_manifest(path: str | Path) -> dict[str, Any]:
         if not cap.get("status"):
             raise ValueError(f"capability '{cap['name']}' must have a 'status'")
 
+    _validate_enforcement(config)
     return config
+
+
+def _validate_enforcement(config: dict[str, Any]) -> None:
+    """Validate the optional enforcement_mode and kill_switches blocks."""
+    from ai_governance.core.actions import ENFORCEMENT_MODES
+
+    mode = config.get("enforcement_mode")
+    if mode is not None and str(mode).strip().lower() not in ENFORCEMENT_MODES:
+        raise ValueError(
+            f"enforcement_mode must be one of {sorted(ENFORCEMENT_MODES)}, got {mode!r}"
+        )
+
+    switches = config.get("kill_switches")
+    if switches is None:
+        return
+    if not isinstance(switches, list):
+        raise ValueError("governance manifest 'kill_switches' must be a list")
+    for i, switch in enumerate(switches):
+        if not isinstance(switch, dict):
+            raise ValueError(f"kill switch {i} must be a mapping")
+        if not switch.get("id"):
+            raise ValueError(f"kill switch {i} must have an 'id'")
+        targets = switch.get("target_capabilities")
+        if targets is not None and not isinstance(targets, list):
+            raise ValueError(
+                f"kill switch '{switch['id']}' target_capabilities must be a list"
+            )
 
 
 def resolve_function(

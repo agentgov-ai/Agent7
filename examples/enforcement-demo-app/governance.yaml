@@ -1,0 +1,59 @@
+system_id: enforcement-demo
+deployment_id: local-demo
+environment: local
+agent_id: airspace-copilot
+
+# observe | shadow | enforce
+#   observe  never blocks, behaves exactly like pre-enforcement releases
+#   shadow   never blocks, but records what it would have blocked
+#   enforce  actually blocks DENY and unapproved REQUIRE_APPROVAL
+enforcement_mode: enforce
+
+capabilities:
+  - capability_id: CAP-demo-flights
+    name: fetch_live_flights
+    module_path: app.fetch_live_flights
+    action_type: read
+    status: approved
+    data_classes: [operational]
+    external_side_effect: true
+
+  - capability_id: CAP-demo-query
+    name: run_trino_query
+    module_path: app.run_trino_query
+    action_type: execute
+    status: approved
+    data_classes: [operational]
+    external_side_effect: false
+    # Matched in-process against live argument values. Only the pattern id is
+    # ever persisted -- the SQL text itself never reaches an action record.
+    denied_argument_patterns:
+      - id: destructive_sql
+        pattern: '(?i)\b(drop|delete|truncate|alter|grant)\b'
+
+  - capability_id: CAP-demo-export
+    name: export_query_result
+    module_path: app.export_query_result
+    action_type: communicate
+    status: approved
+    approval_required: true
+    data_classes: [operational, export]
+    external_side_effect: true
+
+  - capability_id: CAP-demo-delete
+    name: delete_airspace_record
+    module_path: app.delete_airspace_record
+    action_type: write
+    status: denied
+    data_classes: [database]
+    external_side_effect: true
+
+kill_switches:
+  # Start disabled. Flip this to true (or toggle it in the dashboard) to watch
+  # an approved, working capability get denied on its next call.
+  - id: disable_live_airspace
+    enabled: false
+    target_capabilities:
+      - fetch_live_flights
+    verdict: DENY
+    reason: "Live airspace feed disabled by operator"

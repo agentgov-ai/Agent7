@@ -14,6 +14,7 @@ import yaml
 from . import db
 from .coverage import compute_field_coverage
 from .draft import build_draft_from_db_events
+from .enforcement import evaluate_action
 from .report import generate_report
 from .risk import build_assessment, build_full_assessment, build_risk_profile, evaluate_framework_applicability
 from .rules import run_r1_confirm_without_proposal, run_rules_for_system, run_all_acap_rules
@@ -105,6 +106,30 @@ class CapabilityEditRequest(BaseModel):
     external_side_effect: bool | None = None
     risk: str | None = None
     reviewer: str = "local_user"
+
+
+class ActionEvaluateRequest(BaseModel):
+    action: dict[str, Any]
+
+
+class ActionRecordRequest(BaseModel):
+    record: dict[str, Any]
+
+
+class KillSwitchCreateRequest(BaseModel):
+    kill_switch_id: str
+    target_capabilities: list[str] = Field(default_factory=list)
+    enabled: bool = True
+    verdict: str = "DENY"
+    reason: str | None = None
+    created_by: str = "local_user"
+
+
+class KillSwitchPatchRequest(BaseModel):
+    enabled: bool | None = None
+    target_capabilities: list[str] | None = None
+    verdict: str | None = None
+    reason: str | None = None
 
 
 def _value(value: Any) -> Any:
@@ -1007,3 +1032,140 @@ def get_audit_status_endpoint(system_id: str) -> dict[str, Any]:
         return db.get_audit_status(conn, system_id)
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Governed actions: pre-execution authorization, records and kill switches
+# ---------------------------------------------------------------------------
+
+@app.post("/actions/evaluate")
+def evaluate_action_endpoint(request: ActionEvaluateRequest) -> dict[str, Any]:
+    """Authorize one action before the caller executes it.
+
+    Deliberately does not call _validate_system: a governed application may
+    post actions before any discovery upload exists for its system.
+    """
+    action = request.action or {}
+    system_id = str(action.get("system_id") or "").strip()
+    if not system_id:
+        raise HTTPException(status_code=422, detail="action.system_id is required")
+    if not action.get("capability_name"):
+        raise HTTPException(status_code=422, detail="action.capability_name is required")
+
+    conn = db.connect()
+    try:
+        decision = evaluate_action(conn, action)
+        action.setdefault("action_id", decision["action_id"])
+        db.insert_governed_action(conn, action)
+        db.insert_action_decision(conn, decision, system_id=system_id)
+    finally:
+        conn.close()
+    return {"decision": decision}
+
+
+@app.post("/actions/record")
+def record_action_endpoint(request: ActionRecordRequest) -> dict[str, Any]:
+    """Persist what actually happened after a decision was applied."""
+    record = request.record or {}
+    if not record.get("action_id"):
+        raise HTTPException(status_code=422, detail="record.action_id is required")
+    stored_request = record.get("request") or {}
+    system_id = record.get("system_id") or stored_request.get("system_id")
+    if not system_id:
+        raise HTTPException(status_code=422, detail="record.system_id is required")
+
+    conn = db.connect()
+    try:
+        # The action may not have been evaluated through this backend (local
+        # fallback, or an offline run replaying records), so store it too.
+        if stored_request:
+            stored_request.setdefault("action_id", record["action_id"])
+            stored_request.setdefault("system_id", system_id)
+            db.insert_governed_action(conn, stored_request, replace=False)
+        decision = record.get("decision")
+        if decision and decision.get("decision_id"):
+            db.insert_action_decision(conn, decision, system_id=system_id)
+        db.upsert_action_record(conn, record)
+    finally:
+        conn.close()
+    return {"stored": True, "action_id": record["action_id"]}
+
+
+@app.get("/systems/{system_id}/actions")
+def list_actions_endpoint(
+    system_id: str,
+    limit: int = Query(default=200, ge=1, le=2000),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
+    conn = db.connect()
+    try:
+        actions = db.list_governed_actions(conn, system_id, limit=limit, offset=offset)
+        summary = db.action_summary_counts(conn, system_id)
+    finally:
+        conn.close()
+    return {
+        "system_id": system_id,
+        "summary": summary,
+        "count": len(actions),
+        "actions": actions,
+    }
+
+
+@app.get("/systems/{system_id}/actions/{action_id}")
+def get_action_endpoint(system_id: str, action_id: str) -> dict[str, Any]:
+    conn = db.connect()
+    try:
+        action = db.get_governed_action(conn, system_id, action_id)
+    finally:
+        conn.close()
+    if action is None:
+        raise HTTPException(status_code=404, detail=f"action not found: {action_id}")
+    return action
+
+
+@app.post("/systems/{system_id}/kill-switches")
+def create_kill_switch_endpoint(
+    system_id: str, request: KillSwitchCreateRequest
+) -> dict[str, Any]:
+    conn = db.connect()
+    try:
+        switch = db.insert_kill_switch(
+            conn,
+            {
+                "kill_switch_id": request.kill_switch_id,
+                "system_id": system_id,
+                "enabled": request.enabled,
+                "target_capabilities": request.target_capabilities,
+                "verdict": request.verdict,
+                "reason": request.reason,
+                "created_by": request.created_by,
+            },
+        )
+    finally:
+        conn.close()
+    return switch
+
+
+@app.get("/systems/{system_id}/kill-switches")
+def list_kill_switches_endpoint(system_id: str) -> dict[str, Any]:
+    conn = db.connect()
+    try:
+        switches = db.list_kill_switches(conn, system_id)
+    finally:
+        conn.close()
+    return {"system_id": system_id, "count": len(switches), "kill_switches": switches}
+
+
+@app.patch("/systems/{system_id}/kill-switches/{kill_switch_id}")
+def patch_kill_switch_endpoint(
+    system_id: str, kill_switch_id: str, request: KillSwitchPatchRequest
+) -> dict[str, Any]:
+    updates = {k: v for k, v in request.model_dump().items() if v is not None}
+    conn = db.connect()
+    try:
+        switch = db.update_kill_switch(conn, system_id, kill_switch_id, updates)
+    finally:
+        conn.close()
+    if switch is None:
+        raise HTTPException(status_code=404, detail=f"kill switch not found: {kill_switch_id}")
+    return switch

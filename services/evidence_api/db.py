@@ -137,6 +137,73 @@ def init_db(conn: sqlite3.Connection) -> None:
             project_hash TEXT,
             payload_json TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS governed_actions (
+            action_id TEXT PRIMARY KEY,
+            system_id TEXT NOT NULL,
+            deployment_id TEXT,
+            environment TEXT,
+            agent_id TEXT,
+            capability_id TEXT,
+            capability_name TEXT NOT NULL,
+            module_path TEXT,
+            action_type TEXT,
+            enforcement_mode TEXT NOT NULL,
+            session_id TEXT,
+            trace_id TEXT,
+            parent_span_id TEXT,
+            arguments_hash TEXT,
+            external_side_effect INTEGER,
+            approval_required INTEGER,
+            request_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS action_decisions (
+            decision_id TEXT PRIMARY KEY,
+            action_id TEXT NOT NULL,
+            system_id TEXT NOT NULL,
+            verdict TEXT NOT NULL,
+            reason TEXT,
+            reason_code TEXT,
+            decided_by TEXT NOT NULL,
+            matched_capability_id TEXT,
+            kill_switch_id TEXT,
+            matched_pattern_id TEXT,
+            acap_version_id TEXT,
+            acap_version_number INTEGER,
+            approval_required INTEGER,
+            payload_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS action_records (
+            record_id TEXT PRIMARY KEY,
+            action_id TEXT NOT NULL UNIQUE,
+            decision_id TEXT,
+            system_id TEXT NOT NULL,
+            executed INTEGER NOT NULL,
+            execution_status TEXT NOT NULL,
+            would_have_blocked INTEGER,
+            duration_ms REAL,
+            error_type TEXT,
+            event_ids_json TEXT,
+            evidence_hash TEXT,
+            payload_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS kill_switches (
+            kill_switch_id TEXT PRIMARY KEY,
+            system_id TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            target_capabilities_json TEXT NOT NULL,
+            verdict TEXT NOT NULL DEFAULT 'DENY',
+            reason TEXT,
+            created_by TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         """
     )
     conn.commit()
@@ -161,6 +228,10 @@ def _migrate_add_columns(conn: sqlite3.Connection) -> None:
 
 
 def reset_db(conn: sqlite3.Connection) -> None:
+    conn.execute("DELETE FROM action_records")
+    conn.execute("DELETE FROM action_decisions")
+    conn.execute("DELETE FROM governed_actions")
+    conn.execute("DELETE FROM kill_switches")
     conn.execute("DELETE FROM acap_versions")
     conn.execute("DELETE FROM capability_reviews")
     conn.execute("DELETE FROM capabilities")
@@ -732,7 +803,7 @@ def get_acap_version(
 def list_known_system_ids(conn: sqlite3.Connection) -> set[str]:
     """Return all system_ids that appear anywhere in the database."""
     ids: set[str] = set()
-    for table in ("discovery_uploads", "events", "acap_versions", "findings"):
+    for table in ("discovery_uploads", "events", "acap_versions", "findings", "governed_actions"):
         try:
             rows = conn.execute(f"SELECT DISTINCT system_id FROM {table} WHERE system_id IS NOT NULL").fetchall()
             ids.update(row[0] for row in rows)
@@ -976,3 +1047,339 @@ def get_audit_status(conn: sqlite3.Connection, system_id: str) -> dict[str, Any]
         "next_action": next_action,
     }
 
+
+
+# ---------------------------------------------------------------------------
+# Governed actions, decisions, records and kill switches
+# ---------------------------------------------------------------------------
+
+
+def _json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, ensure_ascii=False, default=str)
+
+
+def _bool_or_none(value: Any) -> int | None:
+    return None if value is None else int(bool(value))
+
+
+def insert_governed_action(
+    conn: sqlite3.Connection, request: dict[str, Any], *, replace: bool = True
+) -> None:
+    """Store a governed action.
+
+    ``replace=False`` keeps an already-evaluated request intact, so reporting
+    an outcome can never rewrite what was actually authorized.
+    """
+    verb = "INSERT OR REPLACE" if replace else "INSERT OR IGNORE"
+    conn.execute(
+        f"""
+        {verb} INTO governed_actions (
+            action_id, system_id, deployment_id, environment, agent_id,
+            capability_id, capability_name, module_path, action_type,
+            enforcement_mode, session_id, trace_id, parent_span_id,
+            arguments_hash, external_side_effect, approval_required,
+            request_json, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            request["action_id"],
+            request["system_id"],
+            request.get("deployment_id"),
+            request.get("environment"),
+            request.get("agent_id"),
+            request.get("capability_id"),
+            request.get("capability_name"),
+            request.get("module_path"),
+            request.get("action_type"),
+            request.get("enforcement_mode", "observe"),
+            request.get("session_id"),
+            request.get("trace_id"),
+            request.get("parent_span_id"),
+            request.get("arguments_hash"),
+            _bool_or_none(request.get("external_side_effect")),
+            _bool_or_none(request.get("approval_required")),
+            _json(request),
+            request.get("created_at") or datetime.now(timezone.utc).isoformat(),
+        ),
+    )
+    conn.commit()
+
+
+def insert_action_decision(
+    conn: sqlite3.Connection, decision: dict[str, Any], *, system_id: str
+) -> None:
+    conn.execute(
+        """
+        INSERT OR REPLACE INTO action_decisions (
+            decision_id, action_id, system_id, verdict, reason, reason_code,
+            decided_by, matched_capability_id, kill_switch_id, matched_pattern_id,
+            acap_version_id, acap_version_number, approval_required,
+            payload_json, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            decision["decision_id"],
+            decision["action_id"],
+            system_id,
+            decision["verdict"],
+            decision.get("reason"),
+            decision.get("reason_code"),
+            decision.get("decided_by", "backend"),
+            decision.get("matched_capability_id"),
+            decision.get("kill_switch_id"),
+            decision.get("matched_pattern_id"),
+            decision.get("acap_version_id"),
+            decision.get("acap_version_number"),
+            _bool_or_none(decision.get("approval_required")),
+            _json(decision),
+            decision.get("created_at") or datetime.now(timezone.utc).isoformat(),
+        ),
+    )
+    conn.commit()
+
+
+def upsert_action_record(conn: sqlite3.Connection, record: dict[str, Any]) -> None:
+    """Store the execution outcome for an action, replacing any prior row."""
+    request = record.get("request") or {}
+    system_id = record.get("system_id") or request.get("system_id")
+    conn.execute("DELETE FROM action_records WHERE action_id = ?", (record["action_id"],))
+    conn.execute(
+        """
+        INSERT INTO action_records (
+            record_id, action_id, decision_id, system_id, executed, execution_status,
+            would_have_blocked, duration_ms, error_type, event_ids_json,
+            evidence_hash, payload_json, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            record["record_id"],
+            record["action_id"],
+            record.get("decision_id"),
+            system_id,
+            int(bool(record.get("executed"))),
+            record.get("execution_status", "unknown"),
+            _bool_or_none(record.get("would_have_blocked")),
+            record.get("duration_ms"),
+            record.get("error_type"),
+            _json(record.get("event_ids") or []),
+            record.get("evidence_hash"),
+            _json(record),
+            record.get("created_at") or datetime.now(timezone.utc).isoformat(),
+        ),
+    )
+    conn.commit()
+
+
+def list_governed_actions(
+    conn: sqlite3.Connection, system_id: str, *, limit: int = 200, offset: int = 0
+) -> list[dict[str, Any]]:
+    """Return governed actions newest first, joined with decision and outcome."""
+    rows = conn.execute(
+        """
+        SELECT a.action_id, a.system_id, a.capability_id, a.capability_name,
+               a.module_path, a.action_type, a.enforcement_mode, a.session_id,
+               a.trace_id, a.arguments_hash, a.external_side_effect, a.created_at,
+               d.decision_id, d.verdict, d.reason, d.reason_code, d.decided_by,
+               d.kill_switch_id, d.matched_pattern_id,
+               r.executed, r.execution_status, r.would_have_blocked,
+               r.duration_ms, r.error_type, r.evidence_hash
+        FROM governed_actions AS a
+        LEFT JOIN action_records AS r ON r.action_id = a.action_id
+        LEFT JOIN action_decisions AS d ON d.decision_id = COALESCE(
+            r.decision_id,
+            (SELECT decision_id FROM action_decisions
+             WHERE action_id = a.action_id ORDER BY created_at DESC, rowid DESC LIMIT 1)
+        )
+        WHERE a.system_id = ?
+        ORDER BY a.created_at DESC, a.action_id DESC
+        LIMIT ? OFFSET ?
+        """,
+        (system_id, limit, offset),
+    ).fetchall()
+    out = []
+    for row in rows:
+        item = dict(row)
+        item["executed"] = None if item["executed"] is None else bool(item["executed"])
+        item["would_have_blocked"] = (
+            None if item["would_have_blocked"] is None else bool(item["would_have_blocked"])
+        )
+        item["external_side_effect"] = (
+            None if item["external_side_effect"] is None else bool(item["external_side_effect"])
+        )
+        out.append(item)
+    return out
+
+
+def get_governed_action(
+    conn: sqlite3.Connection, system_id: str, action_id: str
+) -> dict[str, Any] | None:
+    action = conn.execute(
+        "SELECT request_json FROM governed_actions WHERE system_id = ? AND action_id = ?",
+        (system_id, action_id),
+    ).fetchone()
+    if action is None:
+        return None
+    decision = conn.execute(
+        "SELECT payload_json FROM action_decisions WHERE action_id = ?", (action_id,)
+    ).fetchone()
+    record = conn.execute(
+        "SELECT payload_json FROM action_records WHERE action_id = ?", (action_id,)
+    ).fetchone()
+    return {
+        "action_id": action_id,
+        "system_id": system_id,
+        "request": json.loads(action["request_json"]),
+        "decision": json.loads(decision["payload_json"]) if decision else None,
+        "record": json.loads(record["payload_json"]) if record else None,
+    }
+
+
+def action_summary_counts(conn: sqlite3.Connection, system_id: str) -> dict[str, int]:
+    """Headline counts for the Governed Actions dashboard tab."""
+    total = int(
+        conn.execute(
+            "SELECT COUNT(*) FROM governed_actions WHERE system_id = ?", (system_id,)
+        ).fetchone()[0]
+    )
+    verdicts = conn.execute(
+        """
+        SELECT d.verdict, COUNT(*)
+        FROM governed_actions AS a
+        LEFT JOIN action_records AS r ON r.action_id = a.action_id
+        LEFT JOIN action_decisions AS d ON d.decision_id = COALESCE(
+            r.decision_id,
+            (SELECT decision_id FROM action_decisions
+             WHERE action_id = a.action_id ORDER BY created_at DESC, rowid DESC LIMIT 1)
+        )
+        WHERE a.system_id = ?
+        GROUP BY d.verdict
+        """,
+        (system_id,),
+    ).fetchall()
+    by_verdict = {str(row[0]): int(row[1]) for row in verdicts}
+    statuses = conn.execute(
+        """
+        SELECT execution_status, COUNT(*) FROM action_records
+        WHERE system_id = ? GROUP BY execution_status
+        """,
+        (system_id,),
+    ).fetchall()
+    by_status = {str(row[0]): int(row[1]) for row in statuses}
+    would_block = int(
+        conn.execute(
+            """
+            SELECT COUNT(*) FROM action_records
+            WHERE system_id = ? AND would_have_blocked = 1 AND execution_status = 'shadow_allowed'
+            """,
+            (system_id,),
+        ).fetchone()[0]
+    )
+    return {
+        "total": total,
+        "allowed": by_verdict.get("ALLOW", 0),
+        "denied": by_verdict.get("DENY", 0),
+        "approval_required": by_verdict.get("REQUIRE_APPROVAL", 0),
+        "blocked": by_status.get("denied_blocked", 0)
+        + by_status.get("approval_required_blocked", 0),
+        "executed": by_status.get("allowed_executed", 0),
+        "shadow_would_block": would_block,
+        "observe_only": by_status.get("observe_only", 0),
+    }
+
+
+def insert_kill_switch(conn: sqlite3.Connection, switch: dict[str, Any]) -> dict[str, Any]:
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        """
+        INSERT OR REPLACE INTO kill_switches (
+            kill_switch_id, system_id, enabled, target_capabilities_json,
+            verdict, reason, created_by, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            switch["kill_switch_id"],
+            switch["system_id"],
+            int(bool(switch.get("enabled", True))),
+            _json(switch.get("target_capabilities") or []),
+            str(switch.get("verdict") or "DENY").upper(),
+            switch.get("reason"),
+            switch.get("created_by", "local_user"),
+            now,
+            now,
+        ),
+    )
+    conn.commit()
+    return get_kill_switch(conn, switch["system_id"], switch["kill_switch_id"]) or {}
+
+
+def _kill_switch_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "kill_switch_id": row["kill_switch_id"],
+        "system_id": row["system_id"],
+        "enabled": bool(row["enabled"]),
+        "target_capabilities": json.loads(row["target_capabilities_json"] or "[]"),
+        "verdict": row["verdict"],
+        "reason": row["reason"],
+        "created_by": row["created_by"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def list_kill_switches(conn: sqlite3.Connection, system_id: str) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        "SELECT * FROM kill_switches WHERE system_id = ? ORDER BY kill_switch_id",
+        (system_id,),
+    ).fetchall()
+    return [_kill_switch_from_row(row) for row in rows]
+
+
+def get_kill_switch(
+    conn: sqlite3.Connection, system_id: str, kill_switch_id: str
+) -> dict[str, Any] | None:
+    row = conn.execute(
+        "SELECT * FROM kill_switches WHERE system_id = ? AND kill_switch_id = ?",
+        (system_id, kill_switch_id),
+    ).fetchone()
+    return _kill_switch_from_row(row) if row else None
+
+
+def update_kill_switch(
+    conn: sqlite3.Connection,
+    system_id: str,
+    kill_switch_id: str,
+    updates: dict[str, Any],
+) -> dict[str, Any] | None:
+    current = get_kill_switch(conn, system_id, kill_switch_id)
+    if current is None:
+        return None
+    enabled = updates.get("enabled", current["enabled"])
+    targets = updates.get("target_capabilities", current["target_capabilities"])
+    verdict = str(updates.get("verdict", current["verdict"]) or "DENY").upper()
+    reason = updates.get("reason", current["reason"])
+    conn.execute(
+        """
+        UPDATE kill_switches
+        SET enabled = ?, target_capabilities_json = ?, verdict = ?, reason = ?, updated_at = ?
+        WHERE system_id = ? AND kill_switch_id = ?
+        """,
+        (
+            int(bool(enabled)),
+            _json(targets),
+            verdict,
+            reason,
+            datetime.now(timezone.utc).isoformat(),
+            system_id,
+            kill_switch_id,
+        ),
+    )
+    conn.commit()
+    return get_kill_switch(conn, system_id, kill_switch_id)
+
+
+def active_kill_switches(conn: sqlite3.Connection, system_id: str) -> list[dict[str, Any]]:
+    return [switch for switch in list_kill_switches(conn, system_id) if switch["enabled"]]

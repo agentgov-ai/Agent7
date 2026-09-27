@@ -39,7 +39,7 @@ class EvidenceUiTest(unittest.TestCase):
     def test_ui_assets_are_served_and_call_expected_endpoints(self):
         page = self.client.get("/ui/")
         self.assertEqual(page.status_code, 200)
-        self.assertIn("AI Governance Command Center", page.text)
+        self.assertIn("Agent7 Control Center", page.text)
 
         script = self.client.get("/ui/app.js")
         self.assertEqual(script.status_code, 200)

@@ -17,6 +17,11 @@ const state = {
   discoveryFilter: "all",
   acapVersions: [],
   auditStatus: null,
+  actions: [],
+  actionSummary: null,
+  actionDetails: {},
+  killSwitches: [],
+  selectedActionId: null,
   activeTab: "overview",
 };
 
@@ -61,6 +66,13 @@ function clear(element) {
   while (element.firstChild) {
     element.removeChild(element.firstChild);
   }
+}
+
+function cell(tag, className, text) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  el.textContent = safeDisplay(text);
+  return el;
 }
 
 function shortId(value) {
@@ -762,6 +774,10 @@ function render() {
   renderRiskProfile();
   renderApplicability();
   renderLatestAssessment();
+  renderGovernedActions();
+  renderKillSwitches();
+  renderApprovals();
+  renderShellChrome();
   renderFindingsList();
   renderDetails();
   // Update sidebar status
@@ -873,6 +889,9 @@ async function loadEvidenceView() {
     state.findings = Array.isArray(findingsPayload.findings) ? findingsPayload.findings : [];
     state.events = Array.isArray(eventsPayload.events) ? eventsPayload.events : [];
     state.selectedId = (state.findings[0] || {}).finding_id || null;
+    state.actionDetails = {};
+    state.selectedActionId = null;
+    if (sid) await loadGovernedActions(sid);
     render();
   } catch (error) {
     state.health = { ok: false };
@@ -966,12 +985,15 @@ function renderDiscovery() {
     clear(tbody);
     for (const entry of ms) {
       const row = document.createElement("tr");
-      row.innerHTML =
-        `<td class="mono">${safeDisplay(entry.name)}</td>` +
-        `<td><span class="badge">${safeDisplay(entry.provider)}</span></td>` +
-        `<td class="mono">${safeDisplay(entry.file_path)}</td>` +
-        `<td>${safeDisplay(entry.line)}</td>` +
-        `<td class="muted">${safeDisplay((entry.call_chain || []).join(" "))}</td>`;
+      const providerCell = document.createElement("td");
+      providerCell.appendChild(cell("span", "badge", entry.provider));
+      row.append(
+        cell("td", "mono", entry.name),
+        providerCell,
+        cell("td", "mono", entry.file_path),
+        cell("td", "", entry.line),
+        cell("td", "muted", (entry.call_chain || []).join(" "))
+      );
       tbody.appendChild(row);
     }
   } else {
@@ -988,20 +1010,22 @@ function renderCapabilityCard(cap) {
 
   const header = document.createElement("div");
   header.className = "cap-header";
-  header.innerHTML =
-    `<span class="cap-name">${safeDisplay(cap.name)}</span>` +
-    `<span class="${riskBadgeClass(cap.risk)}">${safeDisplay(cap.risk)}</span>` +
-    `<span class="badge">${safeDisplay(cap.confidence_source)} (${cap.confidence})</span>` +
-    `<span class="${capStatusBadgeClass(cap.review_status)}">${safeDisplay(cap.review_status)}</span>`;
+  header.append(
+    cell("span", "cap-name", cap.name),
+    cell("span", riskBadgeClass(cap.risk), cap.risk),
+    cell("span", "badge", `${safeDisplay(cap.confidence_source)} (${safeDisplay(cap.confidence)})`),
+    cell("span", capStatusBadgeClass(cap.review_status), cap.review_status)
+  );
   card.appendChild(header);
 
   const meta = document.createElement("div");
   meta.className = "cap-meta";
-  meta.innerHTML =
-    `<span class="mono">${safeDisplay(cap.file_path)}:${cap.line_start}-${cap.line_end}</span>` +
-    `<span>module: ${safeDisplay(cap.module_path)}</span>` +
-    `<span>action: ${safeDisplay(cap.suggested_action_type)}</span>` +
-    `<span>data: ${safeDisplay((cap.suggested_data_classes || []).join(", ") || "-")}</span>`;
+  meta.append(
+    cell("span", "mono", `${safeDisplay(cap.file_path)}:${safeDisplay(cap.line_start)}-${safeDisplay(cap.line_end)}`),
+    cell("span", "", `module: ${safeDisplay(cap.module_path)}`),
+    cell("span", "", `action: ${safeDisplay(cap.suggested_action_type)}`),
+    cell("span", "", `data: ${safeDisplay((cap.suggested_data_classes || []).join(", ") || "-")}`)
+  );
   card.appendChild(meta);
 
   const evidence = cap.evidence || [];
@@ -1245,10 +1269,11 @@ function renderAcapVersions() {
   for (const v of versions) {
     const card = document.createElement("div");
     card.className = "acap-version-card";
-    card.innerHTML =
-      `<span class="badge allowed">v${v.version_number}</span> ` +
-      `<span class="mono">${safeDisplay(v.acap_version_id)}</span> ` +
-      `<span class="muted">${formatTime(v.generated_at)}</span>`;
+    card.append(
+      cell("span", "badge allowed", `v${safeDisplay(v.version_number)}`),
+      cell("span", "mono", v.acap_version_id),
+      cell("span", "muted", formatTime(v.generated_at))
+    );
     if (sid) {
       const dlBtn = document.createElement("a");
       dlBtn.className = "btn-download";
@@ -1428,11 +1453,519 @@ function initEventListeners() {
     });
   }
 
+  const createKsBtn = byId("createKillSwitchBtn");
+  if (createKsBtn) createKsBtn.addEventListener("click", createKillSwitch);
+
+  const themeBtn = byId("themeToggle");
+  if (themeBtn) themeBtn.addEventListener("click", toggleTheme);
+
+  const refreshBtn = byId("refreshBtn");
+  if (refreshBtn) refreshBtn.addEventListener("click", refreshView);
+
+  const menuBtn = byId("menuBtn");
+  if (menuBtn) menuBtn.addEventListener("click", () => setSidebar(true));
+  const backdrop = byId("sidebarBackdrop");
+  if (backdrop) backdrop.addEventListener("click", () => setSidebar(false));
+
   // Tab navigation
   for (const btn of document.querySelectorAll(".nav-item[data-tab]")) {
-    btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    btn.addEventListener("click", () => {
+      switchTab(btn.dataset.tab);
+      setSidebar(false);
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shell: theme, refresh, mobile navigation
+// ---------------------------------------------------------------------------
+
+const THEME_KEY = "agent7-theme";
+
+function toggleTheme() {
+  const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  try {
+    localStorage.setItem(THEME_KEY, next);
+  } catch (_) {
+    /* private mode or blocked storage: the theme still applies for this page */
+  }
+}
+
+function setSidebar(open) {
+  const sidebar = byId("sidebar");
+  const backdrop = byId("sidebarBackdrop");
+  if (!sidebar || !backdrop) return;
+  sidebar.classList.toggle("open", open);
+  backdrop.classList.toggle("hidden", !open);
+}
+
+async function refreshView() {
+  const btn = byId("refreshBtn");
+  if (btn) btn.classList.add("spinning");
+  try {
+    await loadEvidenceView();
+  } finally {
+    if (btn) btn.classList.remove("spinning");
   }
 }
 
 initEventListeners();
 loadEvidenceView();
+
+// ---------------------------------------------------------------------------
+// Governed Actions
+// ---------------------------------------------------------------------------
+
+const PILLARS = [
+  { key: "DISCOVER", label: "Discover" },
+  { key: "UNDERSTAND", label: "Understand" },
+  { key: "AUTHORIZE", label: "Authorize" },
+  { key: "ENFORCE", label: "Enforce" },
+  { key: "PROVE", label: "Prove" },
+  { key: "COMPLY", label: "Comply" },
+  { key: "LEARN", label: "Learn" },
+];
+
+function pillarStates() {
+  const summary = state.actionSummary || {};
+  const actions = state.actions || [];
+  const hasDecision = actions.some((a) => a.verdict);
+  const blocked = (summary.blocked || 0) + (summary.shadow_would_block || 0);
+  const enforcing = actions.some((a) => a.enforcement_mode && a.enforcement_mode !== "observe");
+  return {
+    DISCOVER: state.discovery ? "done" : "pending",
+    UNDERSTAND: actions.length > 0 ? "done" : "pending",
+    AUTHORIZE: hasDecision ? "done" : "pending",
+    ENFORCE: blocked > 0 ? "done" : enforcing ? "partial" : "pending",
+    PROVE: actions.some((a) => a.execution_status) ? "done" : "pending",
+    COMPLY: (state.findings || []).length > 0 ? "partial" : "pending",
+    LEARN: actions.length > 0 ? "partial" : "pending",
+  };
+}
+
+function renderPillars() {
+  const host = byId("pillarRibbon");
+  if (!host) return;
+  clear(host);
+  const states = pillarStates();
+  for (const pillar of PILLARS) {
+    const node = document.createElement("div");
+    node.className = `pillar ${states[pillar.key]}`;
+    const dot = document.createElement("span");
+    dot.className = "pillar-dot";
+    const label = document.createElement("span");
+    label.className = "pillar-label";
+    label.textContent = pillar.label;
+    const sub = document.createElement("span");
+    sub.className = "pillar-state";
+    sub.textContent = states[pillar.key] === "done" ? "active" : states[pillar.key] === "partial" ? "collecting" : "not yet";
+    node.append(dot, label, sub);
+    host.appendChild(node);
+  }
+}
+
+function actionKpi(label, value, accent) {
+  const card = document.createElement("div");
+  card.className = `kpi-card ${accent}`;
+  const v = document.createElement("div");
+  v.className = "kpi-value";
+  v.textContent = String(value == null ? 0 : value);
+  const l = document.createElement("div");
+  l.className = "kpi-label";
+  l.textContent = label;
+  card.append(v, l);
+  return card;
+}
+
+function verdictBadgeClass(verdict) {
+  if (verdict === "ALLOW") return "badge allowed";
+  if (verdict === "DENY") return "badge danger";
+  if (verdict === "REQUIRE_APPROVAL") return "badge warning";
+  return "badge";
+}
+
+function executionBadgeClass(status) {
+  if (status === "allowed_executed") return "badge allowed";
+  if (status === "denied_blocked") return "badge danger";
+  if (status === "approval_required_blocked") return "badge warning";
+  if (status === "shadow_allowed") return "badge medium";
+  if (status === "error") return "badge danger";
+  return "badge";
+}
+
+function renderActionKpis() {
+  const host = byId("actionKpis");
+  if (!host) return;
+  clear(host);
+  const s = state.actionSummary || {};
+  host.appendChild(actionKpi("Governed Actions", s.total, "accent-info"));
+  host.appendChild(actionKpi("Allowed", s.allowed, "accent-ok"));
+  host.appendChild(actionKpi("Denied", s.denied, "accent-danger"));
+  host.appendChild(actionKpi("Approval Required", s.approval_required, "accent-warning"));
+  host.appendChild(actionKpi("Blocked", s.blocked, "accent-danger"));
+  host.appendChild(actionKpi("Shadow Would-Block", s.shadow_would_block, "accent-warning"));
+}
+
+function renderGovernedActions() {
+  renderPillars();
+  renderActionKpis();
+
+  const body = byId("actionsBody");
+  if (!body) return;
+  clear(body);
+  const countBadge = byId("actionCount");
+  const actions = state.actions || [];
+  if (countBadge) countBadge.textContent = `${actions.length} actions`;
+
+  if (!actions.length) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 7;
+    cell.className = "empty";
+    cell.textContent = "No governed actions yet. Run an instrumented app with enforcement_mode set to shadow or enforce.";
+    row.appendChild(cell);
+    body.appendChild(row);
+    renderActionDetail();
+    return;
+  }
+
+  for (const action of actions) {
+    const row = document.createElement("tr");
+    if (action.action_id === state.selectedActionId) row.className = "selected";
+    row.style.cursor = "pointer";
+    row.addEventListener("click", () => {
+      state.selectedActionId = action.action_id;
+      renderGovernedActions();
+    });
+
+    const name = document.createElement("td");
+    name.textContent = safeDisplay(action.capability_name);
+
+    const verdict = document.createElement("td");
+    const vb = document.createElement("span");
+    vb.className = verdictBadgeClass(action.verdict);
+    vb.textContent = safeDisplay(action.verdict);
+    verdict.appendChild(vb);
+
+    const outcome = document.createElement("td");
+    const ob = document.createElement("span");
+    ob.className = executionBadgeClass(action.execution_status);
+    ob.textContent = safeDisplay(action.execution_status);
+    outcome.appendChild(ob);
+
+    const mode = document.createElement("td");
+    mode.textContent = safeDisplay(action.enforcement_mode);
+
+    const reason = document.createElement("td");
+    reason.className = "muted";
+    reason.textContent = safeDisplay(action.reason_code);
+
+    const decidedBy = document.createElement("td");
+    decidedBy.className = "muted";
+    decidedBy.textContent = safeDisplay(action.decided_by);
+
+    const when = document.createElement("td");
+    when.className = "muted";
+    when.textContent = formatTime(action.created_at);
+
+    row.append(name, verdict, outcome, mode, reason, decidedBy, when);
+    body.appendChild(row);
+  }
+
+  renderActionDetail();
+}
+
+function selectedAction() {
+  const actions = state.actions || [];
+  return actions.find((a) => a.action_id === state.selectedActionId) || actions[0] || null;
+}
+
+function renderActionDetail() {
+  const action = selectedAction();
+  const badge = byId("actionDetailVerdict");
+  if (!badge) return;
+
+  if (!action) {
+    badge.className = "badge";
+    badge.textContent = "-";
+    for (const id of [
+      "actionDetailId", "actionDetailDecisionId", "actionDetailCapability", "actionDetailModule",
+      "actionDetailMode", "actionDetailStatus", "actionDetailReasonCode", "actionDetailKillSwitch",
+      "actionDetailPattern", "actionDetailArgsHash", "actionDetailArgNames", "actionDetailReason",
+    ]) {
+      const el = byId(id);
+      if (el) el.textContent = "-";
+    }
+    return;
+  }
+
+  badge.className = verdictBadgeClass(action.verdict);
+  badge.textContent = safeDisplay(action.verdict);
+  setText("actionDetailId", action.action_id);
+  setText("actionDetailDecisionId", action.decision_id);
+  setText("actionDetailCapability", action.capability_name);
+  setText("actionDetailModule", action.module_path);
+  setText("actionDetailMode", action.enforcement_mode);
+  setText("actionDetailStatus", action.execution_status);
+  setText("actionDetailReasonCode", action.reason_code);
+  setText("actionDetailKillSwitch", action.kill_switch_id);
+  setText("actionDetailPattern", action.matched_pattern_id);
+  setText("actionDetailArgsHash", action.arguments_hash);
+  setText("actionDetailReason", action.reason);
+
+  const names = byId("actionDetailArgNames");
+  const detail = state.actionDetails[action.action_id];
+  if (names) {
+    const argNames = detail && detail.request ? detail.request.argument_names : null;
+    names.textContent = Array.isArray(argNames) && argNames.length ? argNames.join(", ") : "-";
+  }
+  if (!detail) loadActionDetail(action.action_id);
+}
+
+async function loadActionDetail(actionId) {
+  const sid = state.selectedSystemId;
+  if (!sid || state.actionDetails[actionId]) return;
+  try {
+    state.actionDetails[actionId] = await readJson(
+      `/systems/${encodeURIComponent(sid)}/actions/${encodeURIComponent(actionId)}`
+    );
+    renderActionDetail();
+  } catch (_) { /* detail is optional */ }
+}
+
+function renderKillSwitches() {
+  const body = byId("killSwitchBody");
+  if (!body) return;
+  clear(body);
+  const switches = state.killSwitches || [];
+  const countBadge = byId("killSwitchCount");
+  if (countBadge) {
+    const active = switches.filter((s) => s.enabled).length;
+    countBadge.className = active > 0 ? "badge danger" : "badge";
+    countBadge.textContent = `${active} active / ${switches.length} total`;
+  }
+
+  if (!switches.length) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 6;
+    cell.className = "empty";
+    cell.textContent = "No kill switches defined for this system.";
+    row.appendChild(cell);
+    body.appendChild(row);
+    return;
+  }
+
+  for (const sw of switches) {
+    const row = document.createElement("tr");
+
+    const id = document.createElement("td");
+    id.className = "mono";
+    id.textContent = safeDisplay(sw.kill_switch_id);
+
+    const targets = document.createElement("td");
+    targets.textContent = (sw.target_capabilities || []).join(", ") || "-";
+
+    const verdict = document.createElement("td");
+    verdict.textContent = safeDisplay(sw.verdict);
+
+    const reason = document.createElement("td");
+    reason.className = "muted";
+    reason.textContent = safeDisplay(sw.reason || "-");
+
+    const stateCell = document.createElement("td");
+    const sb = document.createElement("span");
+    sb.className = sw.enabled ? "badge danger" : "badge";
+    sb.textContent = sw.enabled ? "ENABLED" : "disabled";
+    stateCell.appendChild(sb);
+
+    const actionCell = document.createElement("td");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = sw.enabled ? "btn-secondary" : "btn-primary";
+    btn.textContent = sw.enabled ? "Disable" : "Enable";
+    btn.addEventListener("click", () => toggleKillSwitch(sw.kill_switch_id, !sw.enabled));
+    actionCell.appendChild(btn);
+
+    row.append(id, targets, verdict, reason, stateCell, actionCell);
+    body.appendChild(row);
+  }
+}
+
+async function loadGovernedActions(systemId) {
+  const enc = encodeURIComponent(systemId);
+  try {
+    const payload = await readJson(`/systems/${enc}/actions?limit=200`);
+    state.actions = Array.isArray(payload.actions) ? payload.actions : [];
+    state.actionSummary = payload.summary || null;
+  } catch (_) {
+    state.actions = [];
+    state.actionSummary = null;
+  }
+  try {
+    const payload = await readJson(`/systems/${enc}/kill-switches`);
+    state.killSwitches = Array.isArray(payload.kill_switches) ? payload.kill_switches : [];
+  } catch (_) {
+    state.killSwitches = [];
+  }
+}
+
+async function toggleKillSwitch(killSwitchId, enabled) {
+  const sid = state.selectedSystemId;
+  if (!sid) return;
+  const response = await fetch(
+    endpoint(`/systems/${encodeURIComponent(sid)}/kill-switches/${encodeURIComponent(killSwitchId)}`),
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    }
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    renderError(`Could not update kill switch: ${err.detail || response.status}`);
+    return;
+  }
+  await loadGovernedActions(sid);
+  renderGovernedActions();
+  renderKillSwitches();
+}
+
+async function createKillSwitch() {
+  const sid = state.selectedSystemId;
+  if (!sid) return;
+  const id = byId("killSwitchId").value.trim();
+  const targets = byId("killSwitchTargets").value.split(",").map((s) => s.trim()).filter(Boolean);
+  const reason = byId("killSwitchReason").value.trim();
+  if (!id || !targets.length) {
+    renderError("A kill switch needs an id and at least one target capability.");
+    return;
+  }
+  const response = await fetch(endpoint(`/systems/${encodeURIComponent(sid)}/kill-switches`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      kill_switch_id: id,
+      target_capabilities: targets,
+      enabled: true,
+      reason: reason || null,
+    }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    renderError(`Could not create kill switch: ${err.detail || response.status}`);
+    return;
+  }
+  byId("killSwitchId").value = "";
+  byId("killSwitchTargets").value = "";
+  byId("killSwitchReason").value = "";
+  await loadGovernedActions(sid);
+  renderGovernedActions();
+  renderKillSwitches();
+}
+
+
+// ---------------------------------------------------------------------------
+// Approvals — a filtered view of the governed actions already in state
+// ---------------------------------------------------------------------------
+
+function heldActions() {
+  return (state.actions || []).filter(
+    (a) => a.verdict === "REQUIRE_APPROVAL" || a.execution_status === "approval_required_blocked"
+  );
+}
+
+function renderApprovals() {
+  const body = byId("approvalsBody");
+  if (!body) return;
+  clear(body);
+
+  const held = heldActions();
+  const countBadge = byId("approvalsCount");
+  if (countBadge) {
+    countBadge.className = held.length ? "badge warning" : "badge";
+    countBadge.textContent = `${held.length} held`;
+  }
+
+  const kpis = byId("approvalKpis");
+  if (kpis) {
+    clear(kpis);
+    const summary = state.actionSummary || {};
+    kpis.appendChild(actionKpi("Awaiting Approval", held.length, "accent-warning"));
+    kpis.appendChild(actionKpi("Approval Required", summary.approval_required, "accent-warning"));
+    kpis.appendChild(actionKpi("Executed", summary.executed, "accent-ok"));
+    kpis.appendChild(actionKpi("Governed Actions", summary.total, "accent-info"));
+  }
+
+  if (!held.length) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 6;
+    cell.className = "empty";
+    cell.textContent = "Nothing is waiting on approval.";
+    row.appendChild(cell);
+    body.appendChild(row);
+    return;
+  }
+
+  for (const action of held) {
+    const row = document.createElement("tr");
+
+    const name = document.createElement("td");
+    name.textContent = safeDisplay(action.capability_name);
+
+    const verdict = document.createElement("td");
+    const vb = document.createElement("span");
+    vb.className = verdictBadgeClass(action.verdict);
+    vb.textContent = safeDisplay(action.verdict);
+    verdict.appendChild(vb);
+
+    const outcome = document.createElement("td");
+    const ob = document.createElement("span");
+    ob.className = executionBadgeClass(action.execution_status);
+    ob.textContent = safeDisplay(action.execution_status);
+    outcome.appendChild(ob);
+
+    const mode = document.createElement("td");
+    mode.textContent = safeDisplay(action.enforcement_mode);
+
+    const reason = document.createElement("td");
+    reason.className = "muted";
+    reason.textContent = safeDisplay(action.reason_code);
+
+    const when = document.createElement("td");
+    when.className = "muted";
+    when.textContent = formatTime(action.created_at);
+
+    row.append(name, verdict, outcome, mode, reason, when);
+    body.appendChild(row);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Topbar / sidebar chrome driven by loaded state
+// ---------------------------------------------------------------------------
+
+function renderShellChrome() {
+  const envBadge = byId("envBadge");
+  if (envBadge) {
+    const events = state.events || [];
+    const env = (events.find((e) => e && e.environment) || {}).environment;
+    envBadge.textContent = safeDisplay(env || "local");
+  }
+
+  const approvals = byId("navApprovalsCount");
+  if (approvals) {
+    const held = heldActions().length;
+    approvals.textContent = String(held);
+    approvals.style.display = held ? "" : "none";
+  }
+
+  const findings = byId("navFindingsCount");
+  if (findings) {
+    const count = (state.findings || []).length;
+    findings.textContent = String(count);
+    findings.style.display = count ? "" : "none";
+  }
+}

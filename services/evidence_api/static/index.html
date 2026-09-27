@@ -3,43 +3,121 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AgentGov - AI Governance Command Center</title>
+    <title>Agent7 Control Center</title>
+    <meta name="color-scheme" content="light dark" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
+    <script>
+      // Resolve the theme before first paint so the page never flashes.
+      (function () {
+        try {
+          var stored = localStorage.getItem("agent7-theme");
+          var dark = stored
+            ? stored === "dark"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div class="app-shell">
       <!-- ── Sidebar ──────────────────────────────────────── -->
-      <aside class="sidebar">
-        <div class="sidebar-brand">AgentGov</div>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand"><span class="brand-mark" aria-hidden="true">A7</span>Agent7</div>
+
+        <div class="sidebar-section">System</div>
         <select id="systemSelector" class="sidebar-select" aria-label="Select system">
           <option value="">Loading...</option>
         </select>
-        <nav class="sidebar-nav">
-          <button type="button" class="nav-item active" data-tab="overview">Overview</button>
-          <button type="button" class="nav-item" data-tab="discovery">Discovery</button>
-          <button type="button" class="nav-item" data-tab="acap">ACAP</button>
-          <button type="button" class="nav-item" data-tab="evidence">Evidence</button>
-          <button type="button" class="nav-item" data-tab="findings">Findings</button>
-          <button type="button" class="nav-item" data-tab="assessment">Assessment</button>
-          <button type="button" class="nav-item" data-tab="settings">Settings</button>
+
+        <nav class="sidebar-nav" aria-label="Sections">
+          <button type="button" class="nav-item active" data-tab="overview">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            Overview
+          </button>
+          <button type="button" class="nav-item" data-tab="actions">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 2 4 6v6c0 5 3.4 8.9 8 10 4.6-1.1 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
+            Governed Actions
+          </button>
+          <button type="button" class="nav-item" data-tab="approvals">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            Approvals
+            <span class="nav-count" id="navApprovalsCount">0</span>
+          </button>
+
+          <div class="sidebar-section">Govern</div>
+          <button type="button" class="nav-item" data-tab="discovery">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            Agents / Discovery
+          </button>
+          <button type="button" class="nav-item" data-tab="acap">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 14h6"/><path d="M9 18h4"/></svg>
+            Policies
+          </button>
+          <button type="button" class="nav-item" data-tab="evidence">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 3.5-4 3 2.5L20 7"/></svg>
+            Evidence
+          </button>
+          <button type="button" class="nav-item" data-tab="assessment">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M9 11l2 2 4-4"/><path d="M21 12c0 5-3.8 9-9 9s-9-4-9-9 3.8-9 9-9c1.9 0 3.7.6 5.2 1.6"/></svg>
+            Comply
+          </button>
+          <button type="button" class="nav-item" data-tab="findings">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            Findings
+            <span class="nav-count" id="navFindingsCount">0</span>
+          </button>
+
+          <div class="sidebar-section">Workspace</div>
+          <button type="button" class="nav-item" data-tab="settings">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+            Settings
+          </button>
         </nav>
+
         <div class="sidebar-footer">
           <span class="sidebar-status" id="sidebarStatus">Loading</span>
         </div>
       </aside>
+      <div class="sidebar-backdrop hidden" id="sidebarBackdrop"></div>
 
       <!-- ── Main content ─────────────────────────────────── -->
       <main class="main-content">
+        <header class="topbar">
+          <div class="topbar-left">
+            <button type="button" class="icon-btn menu-btn" id="menuBtn" aria-label="Toggle navigation">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            </button>
+            <span class="topbar-title">Agent7 Control Center</span>
+            <span class="env-badge" id="envBadge">local</span>
+          </div>
+          <div class="topbar-right">
+            <button type="button" class="icon-btn" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+              <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+              <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            </button>
+            <button type="button" class="icon-btn" id="refreshBtn" aria-label="Refresh data" title="Refresh">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="main-scroll">
         <div id="errorBanner" class="error-banner hidden" role="alert"></div>
 
         <!-- ═══ Tab 1: Overview ═══ -->
         <div id="tab-overview" class="tab-panel active">
           <div class="tab-header">
-            <div><h1>Overview</h1><p class="tab-subtitle">Executive summary for the selected system</p></div>
+            <div><h1>Overview</h1><p class="tab-subtitle">Runtime trust posture for the selected system</p></div>
           </div>
+
+          <div class="pillar-caption">Agent7 lifecycle</div>
+          <div class="pillar-ribbon" id="pillarRibbon"></div>
 
           <section class="kpi-strip" aria-label="Key indicators">
             <div class="kpi-card" id="kpiStatusCard"><span class="kpi-label">Governance Status</span><span id="kpiStatus" class="kpi-value">-</span><div class="kpi-icon" id="kpiStatusIcon"></div></div>
@@ -96,7 +174,7 @@
         <!-- ═══ Tab 2: Discovery ═══ -->
         <div id="tab-discovery" class="tab-panel">
           <div class="tab-header">
-            <div><h1>Capability Discovery</h1><p class="tab-subtitle">Scanner-discovered capabilities awaiting review</p></div>
+            <div><h1>Agents / Discovery</h1><p class="tab-subtitle">Scanner-discovered agent capabilities awaiting human review</p></div>
           </div>
 
           <div class="card" id="discoveryUploadPanel">
@@ -147,7 +225,7 @@
         <!-- ═══ Tab 3: ACAP ═══ -->
         <div id="tab-acap" class="tab-panel">
           <div class="tab-header">
-            <div><h1>ACAP</h1><p class="tab-subtitle">Authorization Contract for Agent Permissions</p></div>
+            <div><h1>Policies</h1><p class="tab-subtitle">ACAP &mdash; the approved operating boundary for this system</p></div>
           </div>
 
           <div class="card" id="acapPreviewPanel" style="display:none">
@@ -215,10 +293,94 @@ gov.instrument_from_config()</code></pre>
           </div>
         </div>
 
-        <!-- ═══ Tab 5: Findings ═══ -->
+        <!-- ═══ Tab 5: Governed Actions ═══ -->
+        <div id="tab-actions" class="tab-panel">
+          <div class="tab-header">
+            <div><h1>Governed Actions</h1><p class="tab-subtitle">Pre-execution decisions: what Agent7 allowed, held and blocked</p></div>
+          </div>
+
+
+          <div class="kpi-strip" id="actionKpis"></div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Kill Switches</h2>
+              <span id="killSwitchCount" class="badge">-</span>
+            </div>
+            <p class="body-text muted">A kill switch outranks every other rule. Enabling one denies its capabilities on the next call, without redeploying the governed app.</p>
+            <div class="table-wrap">
+              <table class="gov-table">
+                <thead><tr><th>Kill switch</th><th>Targets</th><th>Verdict</th><th>Reason</th><th>State</th><th></th></tr></thead>
+                <tbody id="killSwitchBody"></tbody>
+              </table>
+            </div>
+            <div class="killswitch-form">
+              <input type="text" id="killSwitchId" placeholder="kill switch id, e.g. disable_live_airspace" />
+              <input type="text" id="killSwitchTargets" placeholder="capability names, comma separated" />
+              <input type="text" id="killSwitchReason" placeholder="reason (optional)" />
+              <button type="button" class="btn-primary" id="createKillSwitchBtn">Create Kill Switch</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Latest Governed Actions</h2>
+              <span id="actionCount" class="badge">-</span>
+            </div>
+            <div class="table-wrap">
+              <table class="gov-table" id="actionsTable">
+                <thead><tr><th>Capability</th><th>Verdict</th><th>Outcome</th><th>Mode</th><th>Reason</th><th>Decided by</th><th>When</th></tr></thead>
+                <tbody id="actionsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" id="actionDetailCard">
+            <div class="card-head"><h2>Action Detail</h2><span id="actionDetailVerdict" class="badge">-</span></div>
+            <dl class="meta-grid">
+              <div><dt>Action ID</dt><dd id="actionDetailId" class="mono">-</dd></div>
+              <div><dt>Decision ID</dt><dd id="actionDetailDecisionId" class="mono">-</dd></div>
+              <div><dt>Capability</dt><dd id="actionDetailCapability">-</dd></div>
+              <div><dt>Module path</dt><dd id="actionDetailModule" class="mono">-</dd></div>
+              <div><dt>Enforcement mode</dt><dd id="actionDetailMode">-</dd></div>
+              <div><dt>Execution status</dt><dd id="actionDetailStatus">-</dd></div>
+              <div><dt>Reason code</dt><dd id="actionDetailReasonCode">-</dd></div>
+              <div><dt>Kill switch</dt><dd id="actionDetailKillSwitch">-</dd></div>
+              <div><dt>Matched pattern</dt><dd id="actionDetailPattern">-</dd></div>
+              <div><dt>Arguments hash</dt><dd id="actionDetailArgsHash" class="mono">-</dd></div>
+              <div class="wide"><dt>Argument names (values are never stored)</dt><dd id="actionDetailArgNames">-</dd></div>
+              <div class="wide"><dt>Reason</dt><dd id="actionDetailReason">-</dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <!-- ═══ Approvals ═══ -->
+        <div id="tab-approvals" class="tab-panel">
+          <div class="tab-header">
+            <div><h1>Approvals</h1><p class="tab-subtitle">Actions held because they require a verified approval</p></div>
+          </div>
+
+          <div class="kpi-strip" id="approvalKpis"></div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Held Actions</h2>
+              <span id="approvalsCount" class="badge">-</span>
+            </div>
+            <p class="body-text muted">Agent7 holds these before execution. A self-asserted <span class="mono">granted</span> flag is not trusted &mdash; only a verified approval releases an action.</p>
+            <div class="table-wrap">
+              <table class="gov-table">
+                <thead><tr><th>Capability</th><th>Verdict</th><th>Outcome</th><th>Mode</th><th>Reason</th><th>When</th></tr></thead>
+                <tbody id="approvalsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Tab 6: Findings ═══ -->
         <div id="tab-findings" class="tab-panel">
           <div class="tab-header">
-            <div><h1>Findings</h1><p class="tab-subtitle">Governance violations and rule results</p></div>
+            <div><h1>Findings</h1><p class="tab-subtitle">Policy violations linked to exact evidence events</p></div>
           </div>
 
           <div class="findings-layout">
@@ -255,7 +417,7 @@ gov.instrument_from_config()</code></pre>
         <!-- ═══ Tab 6: Assessment ═══ -->
         <div id="tab-assessment" class="tab-panel">
           <div class="tab-header">
-            <div><h1>Assessment</h1><p class="tab-subtitle">Governance assessment and framework analysis</p></div>
+            <div><h1>Comply</h1><p class="tab-subtitle">Control coverage and framework applicability</p></div>
           </div>
 
           <div class="card">
@@ -300,7 +462,7 @@ gov.instrument_from_config()</code></pre>
         <!-- ═══ Tab 7: Settings ═══ -->
         <div id="tab-settings" class="tab-panel">
           <div class="tab-header">
-            <div><h1>Settings</h1><p class="tab-subtitle">System controls and debug tools</p></div>
+            <div><h1>Settings</h1><p class="tab-subtitle">Workspace controls and demo tools</p></div>
           </div>
 
           <div class="card">
@@ -311,6 +473,7 @@ gov.instrument_from_config()</code></pre>
               <button type="button" id="exportReportBtn" class="btn-secondary">Export Report</button>
             </div>
           </div>
+        </div>
         </div>
       </main>
     </div>

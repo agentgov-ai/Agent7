@@ -6,9 +6,10 @@ callback handler through the invocation config and writes privacy-safe JSONL
 events under artifacts/governance/. Never captures raw prompts or responses.
 """
 
-from .client import GovernanceClient
+from .client import ApprovalContext, GovernanceClient
 from .core import EventBuilder, SessionTracker, fingerprint, sanitize, utc_now, validate_event
 from .discovery import discover_tools, write_tool_discovery
+from .enforcement import Agent7Blocked, EnforcementPolicy, blocked_result
 from .sinks import HttpSink, JsonlSink
 from .writer import EvidenceApiSink, GovernanceEventWriter
 
@@ -24,6 +25,9 @@ except ModuleNotFoundError as exc:
             raise ImportError("GovernanceCallback requires langchain-core") from _callback_import_error
 
 __all__ = [
+    "Agent7Blocked",
+    "ApprovalContext",
+    "EnforcementPolicy",
     "EventBuilder",
     "EvidenceApiSink",
     "GovernanceClient",
@@ -32,6 +36,7 @@ __all__ = [
     "HttpSink",
     "JsonlSink",
     "SessionTracker",
+    "blocked_result",
     "discover_tools",
     "fingerprint",
     "sanitize",
