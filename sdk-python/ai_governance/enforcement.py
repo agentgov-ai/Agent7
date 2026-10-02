@@ -23,6 +23,7 @@ from ai_governance.core.actions import (
     EXECUTION_DENIED_BLOCKED,
     EXECUTION_OBSERVE_ONLY,
     EXECUTION_SHADOW_ALLOWED,
+    MODE_ENFORCE,
     MODE_OBSERVE,
     MODE_SHADOW,
     ActionRecord,
@@ -97,6 +98,40 @@ def normalize_mode(mode: str | None) -> str:
             f"enforcement_mode must be one of {sorted(ENFORCEMENT_MODES)}, got {mode!r}"
         )
     return text
+
+
+MODE_RANK = {MODE_OBSERVE: 0, MODE_SHADOW: 1, MODE_ENFORCE: 2}
+
+
+def stricter_mode(mode: str, other: str | None) -> str:
+    """Return whichever of the two modes enforces more.
+
+    Used to reconcile the mode this process was configured with against one the
+    backend reports. An absent or unrecognised ``other`` leaves ``mode``
+    standing: a dashboard can tighten a system's posture, never loosen it, and a
+    malformed value must never be allowed to turn enforcement on by accident.
+    """
+    if other is None:
+        return mode
+    if other not in MODE_RANK or mode not in MODE_RANK:
+        return mode
+    return other if MODE_RANK[other] > MODE_RANK[mode] else mode
+
+
+def _remote_mode(payload: dict[str, Any]) -> str | None:
+    """Read the effective enforcement mode off an /actions/evaluate response.
+
+    Tolerates both the envelope form ({"enforcement_mode": {"mode": ...}}) and a
+    bare string, and returns None for anything unrecognised -- enforce_decision
+    treats an unknown mode as enforce, so a junk value must never reach it.
+    """
+    raw = payload.get("enforcement_mode")
+    if isinstance(raw, dict):
+        raw = raw.get("mode")
+    if raw is None:
+        return None
+    text = str(raw).strip().lower()
+    return text if text in ENFORCEMENT_MODES else None
 
 
 # ----------------------------------------------------------------------
@@ -591,6 +626,16 @@ class RemoteDecisionClient:
         self.failures = 0
 
     def evaluate(self, request: ActionRequest) -> Decision | None:
+        return self.evaluate_with_mode(request)[0]
+
+    def evaluate_with_mode(self, request: ActionRequest) -> tuple[Decision | None, str | None]:
+        """Authorize an action and report the enforcement mode the backend holds.
+
+        The mode rides the response of a call that already happens once per
+        action, so a dashboard-controlled mode costs no extra round trip. It is
+        returned separately rather than folded into the Decision so the decision
+        schema stays stable.
+        """
         try:
             payload = post_json(
                 f"{self.api_base}/actions/evaluate",
@@ -599,14 +644,15 @@ class RemoteDecisionClient:
                 opener=self._opener,
             )
             if not payload:
-                return None
+                return None, None
             decision_payload = payload.get("decision") or payload
             decision_payload = {**decision_payload, "decided_by": DECIDED_BY_BACKEND}
-            return Decision.from_dict(decision_payload, action_id=request.action_id)
+            decision = Decision.from_dict(decision_payload, action_id=request.action_id)
+            return decision, _remote_mode(payload)
         except Exception:
             self.failures += 1
             logger.warning("Agent7 remote decision failed; using local policy", exc_info=True)
-            return None
+            return None, None
 
 
 class ActionRecorder:

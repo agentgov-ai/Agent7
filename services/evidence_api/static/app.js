@@ -21,6 +21,7 @@ const state = {
   actionSummary: null,
   actionDetails: {},
   killSwitches: [],
+  enforcementMode: null,
   selectedActionId: null,
   activeTab: "overview",
 };
@@ -776,6 +777,7 @@ function render() {
   renderLatestAssessment();
   renderGovernedActions();
   renderKillSwitches();
+  renderEnforcementMode();
   renderApprovals();
   renderShellChrome();
   renderFindingsList();
@@ -1456,6 +1458,20 @@ function initEventListeners() {
   const createKsBtn = byId("createKillSwitchBtn");
   if (createKsBtn) createKsBtn.addEventListener("click", createKillSwitch);
 
+  // Delegated: one listener on the container, so it survives a re-render of
+  // the pills and a click on a child node still resolves to its button.
+  const modeControl = byId("enforcementModeControl");
+  if (modeControl) {
+    modeControl.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-mode]");
+      if (!button || !modeControl.contains(button)) return;
+      // "SDK default" carries data-mode="", which must reach the API as null.
+      const mode = button.dataset.mode || null;
+      console.log("enforcement mode clicked", mode);
+      setEnforcementMode(mode);
+    });
+  }
+
   const themeBtn = byId("themeToggle");
   if (themeBtn) themeBtn.addEventListener("click", toggleTheme);
 
@@ -1808,6 +1824,103 @@ async function loadGovernedActions(systemId) {
     state.killSwitches = Array.isArray(payload.kill_switches) ? payload.kill_switches : [];
   } catch (_) {
     state.killSwitches = [];
+  }
+  try {
+    state.enforcementMode = await readJson(`/systems/${enc}/enforcement-mode`);
+  } catch (_) {
+    state.enforcementMode = null;
+  }
+}
+
+function modeBadgeClass(mode) {
+  if (mode === "enforce") return "badge allowed";
+  if (mode === "shadow") return "badge medium";
+  return "badge";
+}
+
+function renderEnforcementMode() {
+  const info = state.enforcementMode;
+  const badge = byId("enforcementModeBadge");
+  const control = byId("enforcementModeControl");
+  const hint = byId("enforcementModeHint");
+  const overview = byId("ovEnforcementMode");
+
+  if (!info) {
+    if (badge) { badge.className = "badge"; badge.textContent = "-"; }
+    if (hint) hint.textContent = "";
+    if (overview) overview.textContent = "-";
+    if (control) {
+      for (const b of control.querySelectorAll(".filter-btn")) b.classList.remove("active");
+    }
+    return;
+  }
+
+  if (badge) {
+    badge.className = modeBadgeClass(info.mode);
+    badge.textContent = safeDisplay(info.mode);
+  }
+  if (overview) overview.textContent = safeDisplay(info.mode);
+
+  // The selected pill is the override, not the effective mode: "SDK default"
+  // (empty value) is what no override looks like.
+  if (control) {
+    const selected = info.override || "";
+    for (const b of control.querySelectorAll(".filter-btn")) {
+      b.classList.toggle("active", b.dataset.mode === selected);
+    }
+  }
+
+  if (hint) {
+    if (info.source === "dashboard_override_ignored") {
+      hint.textContent =
+        `Override ${info.override} is weaker than the ${info.sdk_mode} mode the SDK sends, ` +
+        `so it is ignored and ${info.mode} stays in force.`;
+    } else if (info.source === "dashboard_override") {
+      hint.textContent =
+        `SDK sends ${info.sdk_mode}; dashboard override ${info.override}. ` +
+        `Effective mode ${info.mode}, applied on the next governed action.`;
+    } else {
+      hint.textContent =
+        `No dashboard override. The ${info.sdk_mode} mode from the system's own ` +
+        `governance.yaml is in force.`;
+    }
+  }
+}
+
+// Guards against a double-click racing two PATCHes. Deliberately not the
+// buttons' `disabled` flag: a thrown render would leave the control dead.
+let enforcementModeInFlight = false;
+
+async function setEnforcementMode(mode) {
+  const sid = state.selectedSystemId;
+  if (!sid) {
+    renderError("Select a system before changing its enforcement mode.");
+    return;
+  }
+  if (enforcementModeInFlight) return;
+  enforcementModeInFlight = true;
+  const control = byId("enforcementModeControl");
+  if (control) control.setAttribute("aria-busy", "true");
+  try {
+    // No optimistic update: the pill does not move until the server confirms.
+    const response = await fetch(endpoint(`/systems/${encodeURIComponent(sid)}/enforcement-mode`), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: mode || null, updated_by: "local_user" }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      renderError(`Could not change enforcement mode: ${err.detail || response.status}`);
+      return;
+    }
+    await loadGovernedActions(sid);
+    renderGovernedActions();
+    renderEnforcementMode();
+  } catch (err) {
+    renderError(`Could not change enforcement mode: ${err.message || err}`);
+  } finally {
+    enforcementModeInFlight = false;
+    if (control) control.removeAttribute("aria-busy");
   }
 }
 

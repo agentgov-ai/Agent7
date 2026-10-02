@@ -67,6 +67,9 @@ class EvidenceUiTest(unittest.TestCase):
         self.assertIn("/assessments", script.text)
         self.assertIn("systemSelector", page.text)
         self.assertIn("systemSelector", script.text)
+        self.assertIn("enforcementModeControl", page.text)
+        self.assertIn("enforcementModeControl", script.text)
+        self.assertIn("/enforcement-mode", script.text)
         self.assertIn("Export Report", page.text)
         self.assertIn("assessment-report.md", script.text)
 

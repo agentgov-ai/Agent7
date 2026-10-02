@@ -243,6 +243,74 @@ verification. Wire it to your real approval service before relying on it.
 Switch `enforcement_mode` to `enforce` before step 7 — in `observe` the kill
 switch is recorded but nothing is blocked.
 
+## Changing the enforcement mode from the dashboard
+
+`governance.yaml`'s `enforcement_mode` is what SkyQuery *sends*; it remains the
+local fallback and nothing here replaces it. The dashboard can additionally hold
+a per-system override, and the mode actually applied is the **stricter** of the
+two:
+
+| governance.yaml | dashboard | effective |
+|---|---|---|
+| observe | *(none)* | observe |
+| observe | enforce | **enforce** |
+| enforce | observe | **enforce** (the override is reported as ignored) |
+
+A dashboard override can tighten a system's posture, never switch enforcement
+off -- the same principle as local policy being a floor for verdicts.
+
+The control is on the **Governed Actions** tab, above Kill Switches:
+`SDK default | Observe | Shadow | Enforce`. The Overview tab shows the effective
+mode read-only. "SDK default" clears the override, so `governance.yaml` drives
+again.
+
+The mode rides the `/actions/evaluate` response that already happens once per
+governed action, so this costs no extra round trip and takes effect on
+SkyQuery's **next** action, with no restart and no code change:
+
+```
+GET   /systems/{system_id}/enforcement-mode
+PATCH /systems/{system_id}/enforcement-mode   {"mode": "enforce"}   # null clears
+```
+
+If the Agent7 API is unreachable, no mode is reported and SkyQuery's configured
+mode stands -- the local manifest fallback is unchanged.
+
+Pass `respect_remote_mode=False` to `GovernanceClient.from_config(...)` to pin a
+deployment to its local mode and ignore the dashboard entirely.
+
+### Validating it against a running SkyQuery
+
+1. Start SkyQuery **once** with `enforcement_mode="observe"` in the bootstrap
+   snippet. Do not restart it again during this test.
+2. Open the Agent7 dashboard, select the `skyquery` system, and leave the mode
+   control on **SDK default**.
+3. Run a dangerous SQL prompt in Chat, e.g. one that produces
+   `DROP TABLE ...`. The action is **recorded and allowed**: the Governed
+   Actions row shows verdict `DENY` with mode `observe`, and the query still ran
+   -- observe never blocks.
+4. Click **Enforce** in the Governed Actions tab. The badge flips to `enforce`
+   and the hint reads "SDK sends observe; dashboard override enforce".
+5. Run the **same** prompt again. It is now blocked: verdict `DENY`, reason code
+   `argument_pattern_denied`, outcome `denied_blocked`, and the SQL never
+   reaches Trino.
+6. SkyQuery was not restarted and its code did not change. Click **SDK default**
+   to hand control back to `governance.yaml`.
+
+A local dry run of the same loop, without SkyQuery, is
+`examples/enforcement-demo-app/run_mode_demo.py --api http://127.0.0.1:8077`.
+
+### One case the dashboard cannot reach
+
+`instrument_from_config()` reads the enforcement mode **once**, at wrap time. In
+`observe`, capabilities whose status is `denied` or `rejected` are skipped and
+never wrapped, so there is no wrapper for a later `enforce` to consult. Boot in
+`shadow` if you want runtime mode control over those too.
+
+This does not affect the dangerous-SQL case above: `execute_generated_sql` is an
+*approved* capability guarded by `denied_argument_patterns`, and approved
+capabilities are always wrapped.
+
 ## Suggested governed capabilities
 
 | Capability | Action type | Why it is governed |
@@ -278,3 +346,8 @@ simply absent from the manifest: an unknown capability is denied in enforce mode
 - `denied_argument_patterns` is a regex guard, not a SQL parser.
 - Kill switches are per-system and unauthenticated — anyone who can reach the
   Agent7 API can toggle one. Do not expose that port beyond localhost yet.
+- The enforcement-mode override is unauthenticated for the same reason. Because
+  strictest wins, reaching the API cannot *disable* enforcement, but it can
+  tighten a system into blocking. Do not expose that port beyond localhost yet.
+- The effective mode is resolved per action against the mode the SDK sent on
+  that call. There is no caching, so an override applies immediately.

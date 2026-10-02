@@ -135,6 +135,7 @@
                 <div><dt>System ID</dt><dd id="systemId">-</dd></div>
                 <div><dt>Deployment</dt><dd id="systemDeployment">-</dd></div>
                 <div><dt>Environment</dt><dd id="systemEnvironment">-</dd></div>
+                <div><dt>Enforcement Mode</dt><dd id="ovEnforcementMode">-</dd></div>
                 <div><dt>Owner</dt><dd id="systemOwner">-</dd></div>
                 <div class="wide"><dt>Purpose</dt><dd id="systemPurpose">-</dd></div>
               </dl>
@@ -301,6 +302,21 @@ gov.instrument_from_config()</code></pre>
 
 
           <div class="kpi-strip" id="actionKpis"></div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Enforcement Mode</h2>
+              <span id="enforcementModeBadge" class="badge">-</span>
+            </div>
+            <p class="body-text muted">The effective mode is the stricter of what the SDK sends and the dashboard override, so this can tighten a system's posture but never switch enforcement off. A change applies to the governed app's next action, with no restart.</p>
+            <div class="risk-filters" id="enforcementModeControl">
+              <button type="button" class="filter-btn" data-mode="">SDK default</button>
+              <button type="button" class="filter-btn" data-mode="observe">Observe</button>
+              <button type="button" class="filter-btn" data-mode="shadow">Shadow</button>
+              <button type="button" class="filter-btn" data-mode="enforce">Enforce</button>
+            </div>
+            <p class="hint-text" id="enforcementModeHint"></p>
+          </div>
 
           <div class="card">
             <div class="card-head">

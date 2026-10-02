@@ -149,6 +149,7 @@ def init_db(conn: sqlite3.Connection) -> None:
             module_path TEXT,
             action_type TEXT,
             enforcement_mode TEXT NOT NULL,
+            requested_enforcement_mode TEXT,
             session_id TEXT,
             trace_id TEXT,
             parent_span_id TEXT,
@@ -204,6 +205,14 @@ def init_db(conn: sqlite3.Connection) -> None:
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS system_enforcement_modes (
+            system_id TEXT PRIMARY KEY,
+            mode TEXT NOT NULL,
+            updated_by TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         """
     )
     conn.commit()
@@ -215,6 +224,7 @@ def _migrate_add_columns(conn: sqlite3.Connection) -> None:
     migrations = [
         ("events", "system_id"),
         ("findings", "system_id"),
+        ("governed_actions", "requested_enforcement_mode"),
         ("discovery_uploads", "previous_upload_id"),
         ("discovery_uploads", "scan_sequence_number"),
     ]
@@ -232,6 +242,7 @@ def reset_db(conn: sqlite3.Connection) -> None:
     conn.execute("DELETE FROM action_decisions")
     conn.execute("DELETE FROM governed_actions")
     conn.execute("DELETE FROM kill_switches")
+    conn.execute("DELETE FROM system_enforcement_modes")
     conn.execute("DELETE FROM acap_versions")
     conn.execute("DELETE FROM capability_reviews")
     conn.execute("DELETE FROM capabilities")
@@ -1076,11 +1087,12 @@ def insert_governed_action(
         {verb} INTO governed_actions (
             action_id, system_id, deployment_id, environment, agent_id,
             capability_id, capability_name, module_path, action_type,
-            enforcement_mode, session_id, trace_id, parent_span_id,
+            enforcement_mode, requested_enforcement_mode, session_id,
+            trace_id, parent_span_id,
             arguments_hash, external_side_effect, approval_required,
             request_json, created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             request["action_id"],
@@ -1093,6 +1105,7 @@ def insert_governed_action(
             request.get("module_path"),
             request.get("action_type"),
             request.get("enforcement_mode", "observe"),
+            request.get("requested_enforcement_mode"),
             request.get("session_id"),
             request.get("trace_id"),
             request.get("parent_span_id"),
@@ -1383,3 +1396,83 @@ def update_kill_switch(
 
 def active_kill_switches(conn: sqlite3.Connection, system_id: str) -> list[dict[str, Any]]:
     return [switch for switch in list_kill_switches(conn, system_id) if switch["enabled"]]
+
+
+# ----------------------------------------------------------------------
+# Per-system enforcement-mode override
+#
+# The mode the SDK sends is the system's own configuration. A row here is the
+# dashboard's override of it, so an operator can change a running system's
+# enforcement posture without editing its governance.yaml or restarting it.
+# ----------------------------------------------------------------------
+
+
+def _enforcement_mode_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "system_id": row["system_id"],
+        "mode": row["mode"],
+        "updated_by": row["updated_by"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def get_enforcement_mode_override(
+    conn: sqlite3.Connection, system_id: str
+) -> dict[str, Any] | None:
+    row = conn.execute(
+        "SELECT * FROM system_enforcement_modes WHERE system_id = ?",
+        (system_id,),
+    ).fetchone()
+    return _enforcement_mode_from_row(row) if row else None
+
+
+def set_enforcement_mode_override(
+    conn: sqlite3.Connection,
+    system_id: str,
+    mode: str,
+    updated_by: str = "local_user",
+) -> dict[str, Any]:
+    """Create or replace the override, preserving created_at across a re-set."""
+    now = datetime.now(timezone.utc).isoformat()
+    current = get_enforcement_mode_override(conn, system_id)
+    created_at = current["created_at"] if current else now
+    conn.execute(
+        """
+        INSERT OR REPLACE INTO system_enforcement_modes (
+            system_id, mode, updated_by, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (system_id, mode, updated_by, created_at, now),
+    )
+    conn.commit()
+    return get_enforcement_mode_override(conn, system_id) or {}
+
+
+def clear_enforcement_mode_override(conn: sqlite3.Connection, system_id: str) -> bool:
+    """Remove the override so the mode the SDK sends applies again."""
+    cursor = conn.execute(
+        "DELETE FROM system_enforcement_modes WHERE system_id = ?",
+        (system_id,),
+    )
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def latest_action_enforcement_mode(
+    conn: sqlite3.Connection, system_id: str
+) -> str | None:
+    """The mode most recently seen from the SDK, for display before any override."""
+    row = conn.execute(
+        """
+        SELECT requested_enforcement_mode, enforcement_mode FROM governed_actions
+        WHERE system_id = ?
+        ORDER BY created_at DESC LIMIT 1
+        """,
+        (system_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    # Rows written before the column existed only recorded the enforced mode.
+    return row["requested_enforcement_mode"] or row["enforcement_mode"]

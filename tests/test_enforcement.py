@@ -795,5 +795,178 @@ class BareToolCompatibilityTest(EnforcementTestBase):
         self.assertEqual(self.event_types(), ["tool_start", "tool_end"])
 
 
+
+class RemoteEnforcementModeTest(EnforcementTestBase):
+    """A dashboard-set mode must reach a running app, and only tighten it."""
+
+    class _Response:
+        def __init__(self, payload: bytes, status: int = 200) -> None:
+            self._payload = payload
+            self.status = status
+
+        def read(self) -> bytes:
+            return self._payload
+
+        def close(self) -> None:
+            return None
+
+    ALLOW_DECISION = {
+        "decision_id": "DEC-remote-allow",
+        "verdict": "ALLOW",
+        "reason": "allowed by policy",
+        "reason_code": "allowed_by_policy",
+    }
+
+    def make_remote_client(self, remote_mode, *, mode: str, **kwargs) -> GovernanceClient:
+        """A client whose backend answers ALLOW and reports ``remote_mode``."""
+        body: dict = {"decision": dict(self.ALLOW_DECISION)}
+        if remote_mode is not None:
+            body["enforcement_mode"] = remote_mode
+
+        payload = json.dumps(body).encode("utf-8")
+
+        def opener(request, timeout=None):
+            return self._Response(payload)
+
+        path = write_manifest(
+            self.tmp_path,
+            {
+                "system_id": "enforcement-test",
+                "capabilities": [
+                    {
+                        "name": "run_trino_query",
+                        "module_path": "m.run_trino_query",
+                        "status": "approved",
+                        "action_type": "execute",
+                        # Local-only rule: the verdict is a local DENY, so what
+                        # the mode decides is whether that DENY actually blocks.
+                        "denied_argument_patterns": [
+                            {"id": "destructive_sql", "pattern": "(?i)(drop|truncate)"}
+                        ],
+                    }
+                ],
+            },
+        )
+        return GovernanceClient.from_config(
+            path,
+            jsonl_path=str(self.events_path),
+            actions_jsonl_path=str(self.actions_path),
+            enforcement_mode=mode,
+            api_endpoint="http://127.0.0.1:8000",
+            remote_decisions=True,
+            decision_opener=opener,
+            **kwargs,
+        )
+
+    def governed(self, gov: GovernanceClient):
+        @gov.tool(name="run_trino_query", action_type="execute")
+        def run_trino_query(sql: str) -> str:
+            SIDE_EFFECTS.append(sql)
+            return "rows"
+
+        return run_trino_query
+
+    def test_backend_mode_blocks_a_client_configured_for_observe(self):
+        """The acceptance case: observe at startup, enforce from the dashboard."""
+        gov = self.make_remote_client({"mode": "enforce"}, mode="observe")
+        result = self.governed(gov)("DROP TABLE flights")
+
+        self.assertEqual(SIDE_EFFECTS, [])
+        self.assertEqual(result["verdict"], VERDICT_DENY)
+        self.assertEqual(result["reason_code"], "argument_pattern_denied")
+
+    def test_backend_mode_accepts_a_bare_string(self):
+        gov = self.make_remote_client("enforce", mode="observe")
+        self.governed(gov)("DROP TABLE flights")
+        self.assertEqual(SIDE_EFFECTS, [])
+
+    def test_decision_event_names_the_dashboard_as_the_mode_source(self):
+        gov = self.make_remote_client({"mode": "enforce"}, mode="observe")
+        self.governed(gov)("DROP TABLE flights")
+
+        decisions = [e for e in self.events() if e["event_type"] == "action_decision"]
+        self.assertEqual(len(decisions), 1)
+        block = decisions[0]["decision"]
+        self.assertEqual(block["enforcement_mode"], "enforce")
+        self.assertEqual(block["mode_source"], "dashboard_override")
+
+    def test_backend_mode_cannot_weaken_local_enforcement(self):
+        gov = self.make_remote_client({"mode": "observe"}, mode="enforce")
+        result = self.governed(gov)("DROP TABLE flights")
+
+        self.assertEqual(SIDE_EFFECTS, [])
+        self.assertEqual(result["verdict"], VERDICT_DENY)
+
+    def test_a_malformed_backend_mode_is_ignored(self):
+        """An unknown mode must not reach enforce_decision, which enforces by default."""
+        gov = self.make_remote_client({"mode": "block-everything"}, mode="observe")
+        self.assertEqual(self.governed(gov)("DROP TABLE flights"), "rows")
+        self.assertEqual(SIDE_EFFECTS, ["DROP TABLE flights"])
+
+    def test_a_silent_backend_leaves_the_local_mode_standing(self):
+        gov = self.make_remote_client(None, mode="observe")
+        self.assertEqual(self.governed(gov)("DROP TABLE flights"), "rows")
+        self.assertEqual(SIDE_EFFECTS, ["DROP TABLE flights"])
+
+    def test_unreachable_backend_leaves_the_local_mode_standing(self):
+        """Local manifest fallback: no remote mode, so configuration wins."""
+
+        def opener(request, timeout=None):
+            raise OSError("connection refused")
+
+        path = write_manifest(
+            self.tmp_path,
+            {
+                "system_id": "enforcement-test",
+                "capabilities": [
+                    {
+                        "name": "run_trino_query",
+                        "module_path": "m.run_trino_query",
+                        "status": "approved",
+                        "denied_argument_patterns": [
+                            {"id": "destructive_sql", "pattern": "(?i)drop"}
+                        ],
+                    }
+                ],
+            },
+        )
+        gov = GovernanceClient.from_config(
+            path,
+            jsonl_path=str(self.events_path),
+            actions_jsonl_path=str(self.actions_path),
+            enforcement_mode="enforce",
+            api_endpoint="http://127.0.0.1:8000",
+            remote_decisions=True,
+            decision_opener=opener,
+        )
+        result = self.governed(gov)("DROP TABLE flights")
+        self.assertEqual(SIDE_EFFECTS, [])
+        self.assertEqual(result["verdict"], VERDICT_DENY)
+
+    def test_respect_remote_mode_false_pins_the_local_mode(self):
+        gov = self.make_remote_client(
+            {"mode": "enforce"}, mode="observe", respect_remote_mode=False
+        )
+        self.assertEqual(self.governed(gov)("DROP TABLE flights"), "rows")
+        self.assertEqual(SIDE_EFFECTS, ["DROP TABLE flights"])
+
+
+class StricterModeTest(unittest.TestCase):
+    def test_ladder(self):
+        from ai_governance.enforcement import stricter_mode
+
+        self.assertEqual(stricter_mode("observe", "enforce"), "enforce")
+        self.assertEqual(stricter_mode("observe", "shadow"), "shadow")
+        self.assertEqual(stricter_mode("enforce", "observe"), "enforce")
+        self.assertEqual(stricter_mode("shadow", "shadow"), "shadow")
+
+    def test_absent_or_malformed_other_leaves_the_mode_standing(self):
+        from ai_governance.enforcement import stricter_mode
+
+        self.assertEqual(stricter_mode("observe", None), "observe")
+        self.assertEqual(stricter_mode("observe", "ENFORCE_ALL"), "observe")
+        self.assertEqual(stricter_mode("observe", ""), "observe")
+
+
 if __name__ == "__main__":
     unittest.main()

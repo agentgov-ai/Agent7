@@ -1,0 +1,1035 @@
+{
+  "candidates": [
+    {
+      "call_chain": [],
+      "capability_id": "CAP-7cbc4f685eac",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /trino",
+          "file_path": "app/api/routes/agent7_debug.py",
+          "line": 72,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/agent7_debug.py",
+      "line_end": 132,
+      "line_start": 72,
+      "module_path": "app.api.routes.agent7_debug",
+      "name": "debug_trino",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-7a727a05d1dd",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /airports/nearby",
+          "file_path": "app/api/routes/airports.py",
+          "line": 15,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/airports.py",
+      "line_end": 20,
+      "line_start": 15,
+      "module_path": "app.api.routes.airports",
+      "name": "read_nearby_airports",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-36d1e895e16e",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /airports/bounds",
+          "file_path": "app/api/routes/airports.py",
+          "line": 24,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/airports.py",
+      "line_end": 31,
+      "line_start": 24,
+      "module_path": "app.api.routes.airports",
+      "name": "read_airports_in_bounds",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-9dc3c7e89b9f",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /github/login",
+          "file_path": "app/api/routes/auth.py",
+          "line": 28,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/auth.py",
+      "line_end": 43,
+      "line_start": 28,
+      "module_path": "app.api.routes.auth",
+      "name": "login_via_github",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-16e41114b41b",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /github/callback",
+          "file_path": "app/api/routes/auth.py",
+          "line": 46,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/auth.py",
+      "line_end": 156,
+      "line_start": 46,
+      "module_path": "app.api.routes.auth",
+      "name": "github_callback",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-953f8e580f93",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /me",
+          "file_path": "app/api/routes/auth.py",
+          "line": 186,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/auth.py",
+      "line_end": 196,
+      "line_start": 186,
+      "module_path": "app.api.routes.auth",
+      "name": "get_current_user",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-8804cf51a5e0",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /logout",
+          "file_path": "app/api/routes/auth.py",
+          "line": 199,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/auth.py",
+      "line_end": 205,
+      "line_start": 199,
+      "module_path": "app.api.routes.auth",
+      "name": "logout",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-9a1e330211d4",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /token-status",
+          "file_path": "app/api/routes/auth.py",
+          "line": 208,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/auth.py",
+      "line_end": 232,
+      "line_start": 208,
+      "module_path": "app.api.routes.auth",
+      "name": "get_token_status",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-63b16100a27c",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /copilot-llm-test",
+          "file_path": "app/api/routes/auth.py",
+          "line": 234,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/auth.py",
+      "line_end": 292,
+      "line_start": 234,
+      "module_path": "app.api.routes.auth",
+      "name": "test_copilot_llm",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-55540a34b381",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /debug-token/{session_id}",
+          "file_path": "app/api/routes/auth.py",
+          "line": 295,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/auth.py",
+      "line_end": 301,
+      "line_start": 295,
+      "module_path": "app.api.routes.auth",
+      "name": "debug_token",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-9da493bb2ca8",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /health",
+          "file_path": "app/api/routes/auth.py",
+          "line": 304,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/auth.py",
+      "line_end": 305,
+      "line_start": 304,
+      "module_path": "app.api.routes.auth",
+      "name": "health_check",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-031a5ea705e2",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /debug-sessions",
+          "file_path": "app/api/routes/auth.py",
+          "line": 308,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/auth.py",
+      "line_end": 319,
+      "line_start": 308,
+      "module_path": "app.api.routes.auth",
+      "name": "debug_sessions",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-69bb6a738890",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /test-connection",
+          "file_path": "app/api/routes/connections.py",
+          "line": 10,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/connections.py",
+      "line_end": 37,
+      "line_start": 10,
+      "module_path": "app.api.routes.connections",
+      "name": "test_connection",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-adb1e67e976d",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /connect",
+          "file_path": "app/api/routes/connections.py",
+          "line": 41,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/connections.py",
+      "line_end": 82,
+      "line_start": 41,
+      "module_path": "app.api.routes.connections",
+      "name": "connect",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-b8eec3f98034",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /disconnect",
+          "file_path": "app/api/routes/connections.py",
+          "line": 86,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/connections.py",
+      "line_end": 95,
+      "line_start": 86,
+      "module_path": "app.api.routes.connections",
+      "name": "disconnect",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-fa75b73b2bc4",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /save-connection",
+          "file_path": "app/api/routes/connections.py",
+          "line": 99,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/connections.py",
+      "line_end": 113,
+      "line_start": 99,
+      "module_path": "app.api.routes.connections",
+      "name": "save_connection",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-74d38384e774",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /active-connection",
+          "file_path": "app/api/routes/connections.py",
+          "line": 116,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/connections.py",
+      "line_end": 123,
+      "line_start": 116,
+      "module_path": "app.api.routes.connections",
+      "name": "get_active_connection",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-e45256a6270c",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /discover/enterprise",
+          "file_path": "app/api/routes/discover.py",
+          "line": 26,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/discover.py",
+      "line_end": 27,
+      "line_start": 26,
+      "module_path": "app.api.routes.discover",
+      "name": "discover_enterprise",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-302cae3739dc",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /discover/enterprise-candidates",
+          "file_path": "app/api/routes/discover.py",
+          "line": 31,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/discover.py",
+      "line_end": 32,
+      "line_start": 31,
+      "module_path": "app.api.routes.discover",
+      "name": "enterprise_candidates",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-4ca174d5f841",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name '_write_cache' matches risky pattern",
+          "file_path": "app/api/routes/flights.py",
+          "line": 68,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/flights.py",
+      "line_end": 75,
+      "line_start": 68,
+      "module_path": "app.api.routes.flights",
+      "name": "_write_cache",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-a32d396236de",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /flights/live",
+          "file_path": "app/api/routes/flights.py",
+          "line": 178,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/flights.py",
+      "line_end": 257,
+      "line_start": 178,
+      "module_path": "app.api.routes.flights",
+      "name": "get_live_flights",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-986211ff4b9e",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /chat-history",
+          "file_path": "app/api/routes/history.py",
+          "line": 33,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/history.py",
+      "line_end": 48,
+      "line_start": 33,
+      "module_path": "app.api.routes.history",
+      "name": "get_chat_history",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-5f0a75c45db9",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "PUT /chat-history",
+          "file_path": "app/api/routes/history.py",
+          "line": 52,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/history.py",
+      "line_end": 73,
+      "line_start": 52,
+      "module_path": "app.api.routes.history",
+      "name": "save_chat_history",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-c34980c796c6",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /discover-sources",
+          "file_path": "app/api/routes/metadata.py",
+          "line": 10,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/metadata.py",
+      "line_end": 20,
+      "line_start": 10,
+      "module_path": "app.api.routes.metadata",
+      "name": "discover_sources",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-715ebc3222b9",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /selected-sources",
+          "file_path": "app/api/routes/metadata.py",
+          "line": 24,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/metadata.py",
+      "line_end": 34,
+      "line_start": 24,
+      "module_path": "app.api.routes.metadata",
+      "name": "save_selected_sources",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-5f1e2dd93f5a",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /selected-sources",
+          "file_path": "app/api/routes/metadata.py",
+          "line": 38,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/metadata.py",
+      "line_end": 42,
+      "line_start": 38,
+      "module_path": "app.api.routes.metadata",
+      "name": "get_selected_sources",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-ba32176de6d5",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /refresh-selected-context",
+          "file_path": "app/api/routes/metadata.py",
+          "line": 46,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/metadata.py",
+      "line_end": 55,
+      "line_start": 46,
+      "module_path": "app.api.routes.metadata",
+      "name": "refresh_selected_context",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-4d9131a19c00",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /discover",
+          "file_path": "app/api/routes/metadata.py",
+          "line": 59,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/metadata.py",
+      "line_end": 68,
+      "line_start": 59,
+      "module_path": "app.api.routes.metadata",
+      "name": "discover_metadata",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-53e15323af23",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /schema",
+          "file_path": "app/api/routes/metadata.py",
+          "line": 71,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/metadata.py",
+      "line_end": 81,
+      "line_start": 71,
+      "module_path": "app.api.routes.metadata",
+      "name": "get_schema",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-249ec06a93d6",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /refresh",
+          "file_path": "app/api/routes/metadata.py",
+          "line": 84,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/metadata.py",
+      "line_end": 93,
+      "line_start": 84,
+      "module_path": "app.api.routes.metadata",
+      "name": "refresh_metadata",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-369aa221ecf3",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /query",
+          "file_path": "app/api/routes/query.py",
+          "line": 23,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "app/api/routes/query.py",
+      "line_end": 76,
+      "line_start": 23,
+      "module_path": "app.api.routes.query",
+      "name": "query_endpoint",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-be6f001634ea",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /weather",
+          "file_path": "app/api/routes/weather.py",
+          "line": 15,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/api/routes/weather.py",
+      "line_end": 20,
+      "line_start": 15,
+      "module_path": "app.api.routes.weather",
+      "name": "read_weather",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-3a046e27f545",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "GET /",
+          "file_path": "app/main.py",
+          "line": 81,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/main.py",
+      "line_end": 82,
+      "line_start": 81,
+      "module_path": "app.main",
+      "name": "root",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "read",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-60727fba5ee7",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name '_demo_update_column' matches risky pattern",
+          "file_path": "app/pipeline/nl_sql_pipeline.py",
+          "line": 275,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/pipeline/nl_sql_pipeline.py",
+      "line_end": 302,
+      "line_start": 275,
+      "module_path": "app.pipeline.nl_sql_pipeline",
+      "name": "_demo_update_column",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-70b286006847",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name 'encrypt_password' matches risky pattern",
+          "file_path": "app/services/connection_store.py",
+          "line": 13,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/services/connection_store.py",
+      "line_end": 16,
+      "line_start": 13,
+      "module_path": "app.services.connection_store",
+      "name": "encrypt_password",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "unknown",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-5033f273ca0d",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name 'decrypt_password' matches risky pattern",
+          "file_path": "app/services/connection_store.py",
+          "line": 18,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/services/connection_store.py",
+      "line_end": 21,
+      "line_start": 18,
+      "module_path": "app.services.connection_store",
+      "name": "decrypt_password",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "unknown",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-d07bdd820308",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name '_write_cache' matches risky pattern",
+          "file_path": "app/services/weather_service.py",
+          "line": 51,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "app/services/weather_service.py",
+      "line_end": 57,
+      "line_start": 51,
+      "module_path": "app.services.weather_service",
+      "name": "_write_cache",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-fd9cda39316c",
+      "confidence": 0.7,
+      "confidence_source": "route_and_name",
+      "evidence": [
+        {
+          "detail": "POST /query",
+          "file_path": "routes/query.py",
+          "line": 26,
+          "type": "route"
+        }
+      ],
+      "external_side_effect": true,
+      "file_path": "routes/query.py",
+      "line_end": 33,
+      "line_start": 26,
+      "module_path": "routes.query",
+      "name": "query_endpoint",
+      "review_status": "pending",
+      "risk": "low",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    },
+    {
+      "call_chain": [],
+      "capability_id": "CAP-951eb6fec5ad",
+      "confidence": 0.5,
+      "confidence_source": "name_heuristic",
+      "evidence": [
+        {
+          "detail": "function name 'test_sql_validator_keeps_write_operations_blocked' matches risky pattern",
+          "file_path": "test_selected_scope.py",
+          "line": 283,
+          "type": "name_heuristic"
+        }
+      ],
+      "external_side_effect": false,
+      "file_path": "test_selected_scope.py",
+      "line_end": 291,
+      "line_start": 283,
+      "module_path": "test_selected_scope",
+      "name": "test_sql_validator_keeps_write_operations_blocked",
+      "review_status": "pending",
+      "risk": "medium",
+      "source": "deterministic_scanner",
+      "suggested_action_type": "write",
+      "suggested_approval_required": false,
+      "suggested_data_classes": []
+    }
+  ],
+  "generated_at": "2026-10-02T22:52:49.425316+00:00",
+  "model_surface": [],
+  "project_hash": "sha256:d0ff76f2ce80524799c1353f6e3a2c647b390e711f72749ef7bbffe3f9f27442",
+  "scan_summary": {
+    "candidates_found": 39,
+    "files_scanned": 72,
+    "functions_seen": 451,
+    "high_risk_count": 0,
+    "ignored_helpers_count": 412,
+    "low_risk_count": 35,
+    "medium_risk_count": 4,
+    "model_surface_found": 0,
+    "unenumerated_surface": []
+  },
+  "scanner_version": "0.1.0",
+  "schema_version": "0.1",
+  "source": "deterministic_scanner"
+}

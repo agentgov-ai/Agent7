@@ -6,6 +6,10 @@ a kill switch toggled in the dashboard takes effect on the next action.
 This returns the *policy verdict only*. Enforcement-mode semantics (whether a
 DENY actually blocks) stay in the SDK, so one backend can serve clients running
 in observe, shadow and enforce at the same time.
+
+What the backend does own is which *mode* is in force for a system, so an
+operator can change a running system's posture from the dashboard. It reports
+that mode alongside the verdict; the SDK still applies it.
 """
 from __future__ import annotations
 
@@ -16,6 +20,17 @@ from datetime import datetime, timezone
 from typing import Any
 
 from . import db
+
+# Reuse the SDK's mode constants rather than keeping a second copy in sync.
+# validation.py is the existing precedent for importing from the SDK here.
+from .validation import SCHEMA_PATH  # noqa: F401  (puts sdk-python on sys.path)
+from ai_governance.core.actions import (  # noqa: E402
+    DEFAULT_ENFORCEMENT_MODE,
+    ENFORCEMENT_MODES,
+    MODE_ENFORCE,
+    MODE_OBSERVE,
+    MODE_SHADOW,
+)
 
 VERDICT_ALLOW = "ALLOW"
 VERDICT_DENY = "DENY"
@@ -29,6 +44,12 @@ REASON_APPROVAL_REQUIRED_UNTRUSTED = "approval_required_untrusted"
 REASON_ALLOWED_BY_POLICY = "allowed_by_policy"
 
 DECIDED_BY_BACKEND = "backend"
+
+MODE_RANK = {MODE_OBSERVE: 0, MODE_SHADOW: 1, MODE_ENFORCE: 2}
+
+MODE_SOURCE_SDK = "sdk"
+MODE_SOURCE_OVERRIDE = "dashboard_override"
+MODE_SOURCE_OVERRIDE_IGNORED = "dashboard_override_ignored"
 
 ALLOWED_REVIEW_STATUSES = frozenset({"approved", "approved_for_acap", "edited"})
 DENIED_REVIEW_STATUSES = frozenset({"denied", "rejected"})
@@ -251,3 +272,52 @@ def evaluate_action(conn: sqlite3.Connection, request: dict[str, Any]) -> dict[s
         acap_version_id=acap_version_id,
         acap_version_number=acap_version_number,
     )
+
+
+# ----------------------------------------------------------------------
+# Enforcement-mode resolution
+# ----------------------------------------------------------------------
+
+
+def _clean_mode(mode: Any) -> str | None:
+    """Normalize a mode string, or None if it is absent or unrecognised."""
+    if mode is None:
+        return None
+    text = str(mode).strip().lower()
+    return text if text in ENFORCEMENT_MODES else None
+
+
+def resolve_enforcement_mode(
+    conn: sqlite3.Connection,
+    system_id: str,
+    requested_mode: Any = None,
+) -> dict[str, Any]:
+    """Return the effective enforcement mode for a system.
+
+    Strictest wins: the dashboard can tighten a system's posture but never
+    loosen it, which mirrors the rule that local policy is a floor. An override
+    weaker than what the SDK sent is reported as ignored rather than dropped
+    silently, so the dashboard can explain why nothing changed.
+    """
+    sdk_mode = _clean_mode(requested_mode) or DEFAULT_ENFORCEMENT_MODE
+    row = db.get_enforcement_mode_override(conn, system_id)
+    override = _clean_mode(row.get("mode")) if row else None
+
+    if override is None:
+        effective, source = sdk_mode, MODE_SOURCE_SDK
+    elif MODE_RANK[override] > MODE_RANK[sdk_mode]:
+        effective, source = override, MODE_SOURCE_OVERRIDE
+    elif MODE_RANK[override] == MODE_RANK[sdk_mode]:
+        effective, source = override, MODE_SOURCE_OVERRIDE
+    else:
+        effective, source = sdk_mode, MODE_SOURCE_OVERRIDE_IGNORED
+
+    return {
+        "system_id": system_id,
+        "mode": effective,
+        "source": source,
+        "sdk_mode": sdk_mode,
+        "override": override,
+        "updated_at": row.get("updated_at") if row else None,
+        "updated_by": row.get("updated_by") if row else None,
+    }

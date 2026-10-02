@@ -14,7 +14,7 @@ import yaml
 from . import db
 from .coverage import compute_field_coverage
 from .draft import build_draft_from_db_events
-from .enforcement import evaluate_action
+from .enforcement import ENFORCEMENT_MODES, evaluate_action, resolve_enforcement_mode
 from .report import generate_report
 from .risk import build_assessment, build_full_assessment, build_risk_profile, evaluate_framework_applicability
 from .rules import run_r1_confirm_without_proposal, run_rules_for_system, run_all_acap_rules
@@ -130,6 +130,12 @@ class KillSwitchPatchRequest(BaseModel):
     target_capabilities: list[str] | None = None
     verdict: str | None = None
     reason: str | None = None
+
+
+class EnforcementModePatchRequest(BaseModel):
+    # None clears the override, so the mode the SDK sends applies again.
+    mode: str | None = None
+    updated_by: str = "local_user"
 
 
 def _value(value: Any) -> Any:
@@ -1055,12 +1061,19 @@ def evaluate_action_endpoint(request: ActionEvaluateRequest) -> dict[str, Any]:
     conn = db.connect()
     try:
         decision = evaluate_action(conn, action)
+        mode_info = resolve_enforcement_mode(conn, system_id, action.get("enforcement_mode"))
+        # Keep both: the mode actually in force drives the Governed Actions
+        # table, while the mode the SDK asked for is what an override is
+        # compared against -- storing only the effective one would let an
+        # override feed back on itself and misreport the system's own mode.
+        action["requested_enforcement_mode"] = mode_info["sdk_mode"]
+        action["enforcement_mode"] = mode_info["mode"]
         action.setdefault("action_id", decision["action_id"])
         db.insert_governed_action(conn, action)
         db.insert_action_decision(conn, decision, system_id=system_id)
     finally:
         conn.close()
-    return {"decision": decision}
+    return {"decision": decision, "enforcement_mode": mode_info}
 
 
 @app.post("/actions/record")
@@ -1169,3 +1182,54 @@ def patch_kill_switch_endpoint(
     if switch is None:
         raise HTTPException(status_code=404, detail=f"kill switch not found: {kill_switch_id}")
     return switch
+
+
+def _enforcement_mode_state(conn: Any, system_id: str) -> dict[str, Any]:
+    """Resolve the mode against the last mode this system's SDK actually sent."""
+    return resolve_enforcement_mode(
+        conn, system_id, db.latest_action_enforcement_mode(conn, system_id)
+    )
+
+
+@app.get("/systems/{system_id}/enforcement-mode")
+def get_enforcement_mode_endpoint(system_id: str) -> dict[str, Any]:
+    """The effective enforcement mode, and how it was arrived at.
+
+    Like /actions/evaluate, this deliberately does not call _validate_system: a
+    governed app may post actions before any discovery upload exists.
+    """
+    conn = db.connect()
+    try:
+        return _enforcement_mode_state(conn, system_id)
+    finally:
+        conn.close()
+
+
+@app.patch("/systems/{system_id}/enforcement-mode")
+def patch_enforcement_mode_endpoint(
+    system_id: str, request: EnforcementModePatchRequest
+) -> dict[str, Any]:
+    """Set or clear the dashboard override for a system's enforcement mode.
+
+    The override takes effect on the governed app's next action -- no restart.
+    A mode weaker than the one the SDK sends is stored but reported as ignored:
+    the dashboard can tighten a system's posture, never loosen it.
+    """
+    mode = request.mode
+    conn = db.connect()
+    try:
+        if mode is None:
+            db.clear_enforcement_mode_override(conn, system_id)
+        else:
+            normalized = str(mode).strip().lower()
+            if normalized not in ENFORCEMENT_MODES:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"mode must be one of {sorted(ENFORCEMENT_MODES)}, got {mode!r}",
+                )
+            db.set_enforcement_mode_override(
+                conn, system_id, normalized, updated_by=request.updated_by
+            )
+        return _enforcement_mode_state(conn, system_id)
+    finally:
+        conn.close()

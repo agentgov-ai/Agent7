@@ -36,6 +36,7 @@ from ai_governance.enforcement import (
     enforce_decision,
     normalize_mode,
     resolve_endpoints,
+    stricter_mode,
     verify_approval_token,
 )
 from ai_governance.sinks import JsonlSink
@@ -101,6 +102,7 @@ class _ActionContext:
     request: ActionRequest
     decision: Decision
     mode: str
+    requested_mode: str
     should_execute: bool
     execution_status: str
     would_have_blocked: bool
@@ -132,6 +134,7 @@ class GovernanceClient:
         decision_timeout_seconds: float = 1.0,
         remote_decisions: bool | None = None,
         decision_opener: Callable[..., Any] | None = None,
+        respect_remote_mode: bool = True,
     ) -> None:
         """``decision_opener`` overrides the HTTP opener for both the decision
         endpoint and the action-record endpoint. It exists for testing."""
@@ -152,6 +155,10 @@ class GovernanceClient:
 
         # --- enforcement configuration -------------------------------------
         self.enforcement_mode = normalize_mode(enforcement_mode)
+        # When the backend reports a stricter mode than this process was
+        # configured with, honour it -- that is how a dashboard change reaches a
+        # running app. Set False to pin the mode to local configuration.
+        self.respect_remote_mode = bool(respect_remote_mode)
         if on_deny not in _ON_DENY_CHOICES:
             raise ValueError(f"on_deny must be one of {sorted(_ON_DENY_CHOICES)}, got {on_deny!r}")
         self.on_deny = on_deny
@@ -324,16 +331,34 @@ class GovernanceClient:
         must not be able to wave them through. An unreachable backend likewise
         never downgrades a local DENY.
         """
+        return self._authorize_with_mode(
+            request, raw_arguments=raw_arguments, approval=approval
+        )[0]
+
+    def _authorize_with_mode(
+        self,
+        request: ActionRequest,
+        *,
+        raw_arguments: dict[str, Any] | None = None,
+        approval: Any = None,
+    ) -> tuple[Decision, str | None]:
+        """Authorize, and report the enforcement mode the backend holds.
+
+        The mode is returned alongside the decision rather than inside it so the
+        Decision schema stays stable. None means the backend said nothing about
+        the mode -- it is unreachable, older, or has no override -- in which case
+        this process's configured mode stands.
+        """
         local = authorize_action_local(
             request, self.policy, raw_arguments=raw_arguments, approval=approval
         )
         if self.decision_client is None:
-            return local
-        remote = self.decision_client.evaluate(request)
+            return local, None
+        remote, remote_mode = self.decision_client.evaluate_with_mode(request)
         if remote is None:
-            return local
+            return local, remote_mode
         remote = self._apply_local_approval(remote, request, approval)
-        return self._most_restrictive(local, remote)
+        return self._most_restrictive(local, remote), remote_mode
 
     @staticmethod
     def _most_restrictive(local: Decision, remote: Decision) -> Decision:
@@ -400,15 +425,26 @@ class GovernanceClient:
         )
 
         approval = _ACTIVE_APPROVAL.get()
+        remote_mode: str | None = None
         try:
-            decision = self.authorize(request, raw_arguments=raw_arguments, approval=approval)
+            decision, remote_mode = self._authorize_with_mode(
+                request, raw_arguments=raw_arguments, approval=approval
+            )
         except Exception:
             logger.warning("governance authorization failed; falling back to local", exc_info=True)
             decision = authorize_action_local(
                 request, self.policy, raw_arguments=raw_arguments, approval=approval
             )
 
-        should_execute, execution_status, would_have_blocked = enforce_decision(decision, mode)
+        # The request carries the mode this process asked for; the mode actually
+        # applied may be stricter because an operator raised it in the
+        # dashboard. Strictest wins, so a remote mode can tighten enforcement
+        # but never switch it off.
+        effective_mode = stricter_mode(mode, remote_mode) if self.respect_remote_mode else mode
+
+        should_execute, execution_status, would_have_blocked = enforce_decision(
+            decision, effective_mode
+        )
         return _ActionContext(
             spec=spec,
             run_id=run_id,
@@ -418,13 +454,14 @@ class GovernanceClient:
             safe_args=safe_args,
             request=request,
             decision=decision,
-            mode=mode,
+            mode=effective_mode,
+            requested_mode=mode,
             should_execute=should_execute,
             execution_status=execution_status,
             would_have_blocked=would_have_blocked,
             # Default observe mode records nothing: no decision events, no
             # action-record file. Existing evidence output stays byte-identical.
-            records=self.record_decisions or mode != MODE_OBSERVE,
+            records=self.record_decisions or effective_mode != MODE_OBSERVE,
         )
 
     def _decision_block(self, ctx: _ActionContext) -> dict[str, Any]:
@@ -436,6 +473,7 @@ class GovernanceClient:
             "reason": sanitize(ctx.decision.reason),
             "decided_by": ctx.decision.decided_by,
             "enforcement_mode": ctx.mode,
+            "mode_source": "dashboard_override" if ctx.mode != ctx.requested_mode else "sdk",
             "execution_status": ctx.execution_status,
             "would_have_blocked": ctx.would_have_blocked,
             "kill_switch_id": ctx.decision.kill_switch_id,
@@ -738,11 +776,15 @@ class GovernanceClient:
         record_decisions: bool | None = None,
         remote_decisions: bool | None = None,
         decision_opener: Callable[..., Any] | None = None,
+        respect_remote_mode: bool | None = None,
     ) -> "GovernanceClient":
         """Create a :class:`GovernanceClient` from a ``governance.yaml`` manifest.
 
         ``enforcement_mode`` resolves in this order: the explicit argument, then
-        the manifest's ``enforcement_mode`` key, then ``observe``.
+        the manifest's ``enforcement_mode`` key, then ``observe``. It is the
+        floor, not the final word: the backend may report a stricter mode set
+        from the dashboard, which this client honours unless
+        ``respect_remote_mode`` is False.
         """
         from ai_governance.enforcement import build_policy_from_manifest
         from ai_governance.manifest import load_manifest
@@ -773,6 +815,11 @@ class GovernanceClient:
             actions_jsonl_path=actions_jsonl_path or config.get("actions_jsonl_path"),
             remote_decisions=remote_decisions,
             decision_opener=decision_opener,
+            respect_remote_mode=bool(
+                respect_remote_mode
+                if respect_remote_mode is not None
+                else config.get("respect_remote_mode", True)
+            ),
         )
         client._manifest = config  # type: ignore[attr-defined]
         return client

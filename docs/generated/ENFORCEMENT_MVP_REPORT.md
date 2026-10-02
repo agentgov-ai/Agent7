@@ -152,9 +152,18 @@ kill_switches:                      # optional
 | POST | `/systems/{id}/kill-switches` | Create a kill switch |
 | GET | `/systems/{id}/kill-switches` | List kill switches |
 | PATCH | `/systems/{id}/kill-switches/{ks_id}` | Enable/disable |
+| GET | `/systems/{id}/enforcement-mode` | Effective mode, and how it was resolved |
+| PATCH | `/systems/{id}/enforcement-mode` | Set or clear the dashboard override |
 
 `/actions/evaluate` deliberately does not validate the system: a governed app
-may post actions before any discovery upload exists.
+may post actions before any discovery upload exists. The same applies to the
+enforcement-mode endpoints.
+
+`/actions/evaluate` also returns an `enforcement_mode` block beside `decision`:
+the effective mode for the system, which is the stricter of the mode the SDK
+sent and any dashboard override. The SDK applies it, so a mode set in the
+dashboard reaches a running app on its next action without a restart. The
+`decision` object itself is unchanged.
 
 One action can carry two decisions — the backend's evaluate result and the
 effective decision the SDK enforced. The listing joins on the enforced one, so

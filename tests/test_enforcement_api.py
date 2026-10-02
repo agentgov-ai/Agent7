@@ -366,6 +366,100 @@ class EnforcementApiTest(unittest.TestCase):
         self.assertEqual(decision["verdict"], "ALLOW")
         self.assertIn("deferring to local manifest", decision["reason"])
 
+    # -- enforcement mode ----------------------------------------------
+
+    def mode_state(self) -> dict:
+        response = self.client.get(f"/systems/{SYSTEM_ID}/enforcement-mode")
+        self.assertEqual(response.status_code, 200, response.text)
+        return response.json()
+
+    def set_mode(self, mode: str | None) -> dict:
+        response = self.client.patch(
+            f"/systems/{SYSTEM_ID}/enforcement-mode", json={"mode": mode}
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        return response.json()
+
+    def evaluate_mode(self, capability_name: str, **overrides) -> dict:
+        response = self.client.post(
+            "/actions/evaluate", json={"action": action_payload(capability_name, **overrides)}
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        return response.json()["enforcement_mode"]
+
+    def test_mode_defaults_to_what_the_sdk_sends(self):
+        state = self.mode_state()
+        self.assertEqual(state["mode"], "observe")
+        self.assertEqual(state["source"], "sdk")
+        self.assertIsNone(state["override"])
+
+        self.evaluate("fetch_live_flights", enforcement_mode="shadow")
+        state = self.mode_state()
+        self.assertEqual(state["sdk_mode"], "shadow")
+        self.assertEqual(state["mode"], "shadow")
+        self.assertEqual(state["source"], "sdk")
+
+    def test_patch_sets_and_clears_the_override(self):
+        state = self.set_mode("enforce")
+        self.assertEqual(state["override"], "enforce")
+        self.assertEqual(state["mode"], "enforce")
+        self.assertEqual(state["source"], "dashboard_override")
+        self.assertIsNotNone(state["updated_at"])
+
+        state = self.set_mode("shadow")
+        self.assertEqual(state["override"], "shadow")
+
+        state = self.set_mode(None)
+        self.assertIsNone(state["override"])
+        self.assertEqual(state["source"], "sdk")
+
+    def test_patch_rejects_an_unknown_mode(self):
+        response = self.client.patch(
+            f"/systems/{SYSTEM_ID}/enforcement-mode", json={"mode": "block-everything"}
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("mode must be one of", response.json()["detail"])
+        self.assertIsNone(self.mode_state()["override"])
+
+    def test_evaluate_reports_a_stricter_override(self):
+        self.set_mode("enforce")
+        mode = self.evaluate_mode("fetch_live_flights", enforcement_mode="observe")
+        self.assertEqual(mode["mode"], "enforce")
+        self.assertEqual(mode["sdk_mode"], "observe")
+        self.assertEqual(mode["source"], "dashboard_override")
+
+    def test_evaluate_ignores_an_override_that_would_weaken_enforcement(self):
+        self.set_mode("observe")
+        mode = self.evaluate_mode("fetch_live_flights", enforcement_mode="enforce")
+        self.assertEqual(mode["mode"], "enforce")
+        self.assertEqual(mode["source"], "dashboard_override_ignored")
+
+    def test_action_row_stores_the_effective_mode(self):
+        self.set_mode("enforce")
+        self.evaluate("fetch_live_flights", action_id="ACT-mode01", enforcement_mode="observe")
+        detail = self.client.get(f"/systems/{SYSTEM_ID}/actions/ACT-mode01")
+        self.assertEqual(detail.status_code, 200, detail.text)
+        self.assertEqual(detail.json()["request"]["enforcement_mode"], "enforce")
+
+    def test_an_override_does_not_feed_back_into_the_reported_sdk_mode(self):
+        """The stored effective mode must not be mistaken for the system's own."""
+        self.set_mode("enforce")
+        self.evaluate("fetch_live_flights", enforcement_mode="observe")
+
+        state = self.mode_state()
+        self.assertEqual(state["sdk_mode"], "observe")
+        self.assertEqual(state["mode"], "enforce")
+
+        # Clearing the override must restore the mode the SDK actually sends.
+        state = self.set_mode(None)
+        self.assertEqual(state["mode"], "observe")
+        self.assertEqual(state["source"], "sdk")
+
+    def test_demo_reset_clears_the_override(self):
+        self.set_mode("enforce")
+        self.assertEqual(self.client.post("/demo/reset").status_code, 200)
+        self.assertIsNone(self.mode_state()["override"])
+
 
 if __name__ == "__main__":
     unittest.main()
