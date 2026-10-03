@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+from collections import Counter
 import uuid
 from pathlib import Path
 from typing import Any
@@ -16,9 +18,17 @@ from .coverage import compute_field_coverage
 from .draft import build_draft_from_db_events
 from .enforcement import ENFORCEMENT_MODES, evaluate_action, resolve_enforcement_mode
 from .report import generate_report
-from .risk import build_assessment, build_full_assessment, build_risk_profile, evaluate_framework_applicability
+from .risk import (
+    SIDE_EFFECT_ACTION_TYPES,
+    build_assessment,
+    build_full_assessment,
+    build_risk_profile,
+    evaluate_framework_applicability,
+)
 from .rules import run_r1_confirm_without_proposal, run_rules_for_system, run_all_acap_rules
 from .validation import public_event, validate_event
+
+logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_JSONL = REPO_ROOT / "artifacts" / "governance" / "events.jsonl"
@@ -58,6 +68,22 @@ SYSTEM_REGISTRY: dict[str, dict[str, Path]] = {
 }
 
 app = FastAPI(title="Evidence Ingestion API", version="0.1")
+
+
+@app.middleware("http")
+async def _no_cache_dashboard(request, call_next):
+    """Serve the dashboard without heuristic caching.
+
+    StaticFiles sends ETag/Last-Modified but no Cache-Control, so a browser may
+    reuse a cached index.html while fetching a fresh app.js. That skew silently
+    breaks controls: the markup and the script disagree about what exists.
+    """
+    response = await call_next(request)
+    if request.url.path.startswith(("/ui", "/product")):
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return response
+
+
 app.mount("/ui", StaticFiles(directory=STATIC_DIR, html=True), name="ui")
 app.mount("/product", StaticFiles(directory=PRODUCT_DIR, html=True), name="product")
 
@@ -132,6 +158,14 @@ class KillSwitchPatchRequest(BaseModel):
     reason: str | None = None
 
 
+class AssessmentInputsRequest(BaseModel):
+    jurisdiction: str | None = None
+    use_case: str | None = None
+    high_risk_category: bool = False
+    data_sensitivity: str | None = None
+    updated_by: str = "local_user"
+
+
 class EnforcementModePatchRequest(BaseModel):
     # None clears the override, so the mode the SDK sends applies again.
     mode: str | None = None
@@ -152,6 +186,153 @@ def _load_reviewed_acap(system_id: str | None = None) -> dict[str, Any]:
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"reviewed ACAP not found: {path}")
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+
+
+AVIATION_CAPABILITY_HINTS = ("opensky", "flight")
+
+
+def _is_aviation_capability(name: str | None) -> bool:
+    text = str(name or "").lower()
+    return any(hint in text for hint in AVIATION_CAPABILITY_HINTS)
+
+
+def _runtime_control_evidence(
+    actions: list[dict[str, Any]], switches: list[dict[str, Any]]
+) -> list[str]:
+    """Describe runtime controls observed over external aviation capabilities.
+
+    This is evidence shown *within* a framework review, never a reason a
+    framework applies. A kill switch demonstrates an emergency stop control; it
+    says nothing about whether a jurisdiction's rules are in scope.
+    """
+    evidence: list[str] = []
+    governed = [a for a in actions if _is_aviation_capability(a.get("capability_name"))]
+    if not governed:
+        return evidence
+
+    names = sorted({str(a.get("capability_name")) for a in governed if a.get("capability_name")})
+    evidence.append(
+        f"External live aviation API call is governed: {', '.join(names)}"
+    )
+
+    targeted = [
+        sw for sw in switches
+        if any(_is_aviation_capability(t) for t in (sw.get("target_capabilities") or []))
+    ]
+    for sw in targeted:
+        state = "enabled" if sw.get("enabled") else "configured but disabled"
+        evidence.append(
+            f"Kill switch '{sw.get('kill_switch_id')}' targets "
+            f"{', '.join(sw.get('target_capabilities') or [])} ({state})"
+        )
+
+    stopped = [
+        a for a in governed
+        if a.get("reason_code") == "kill_switch"
+        or a.get("execution_status") == "denied_blocked"
+    ]
+    if stopped:
+        latest = stopped[0]
+        evidence.append(
+            f"Latest governed call to {latest.get('capability_name')} was "
+            f"{latest.get('execution_status') or 'denied'} "
+            f"(reason: {latest.get('reason_code') or 'policy'})"
+        )
+        evidence.append(
+            "Demonstrates an emergency runtime stop control over an external "
+            "data source -- control evidence relevant to EU AI Act review"
+        )
+    return evidence
+
+
+def _assessment_inputs(system_id: str) -> dict[str, Any]:
+    """Human-declared inputs for a system, or empty defaults."""
+    conn = db.connect()
+    try:
+        stored = db.get_assessment_inputs(conn, system_id)
+    finally:
+        conn.close()
+    return stored or {
+        "system_id": system_id,
+        "jurisdiction": None,
+        "use_case": None,
+        "high_risk_category": False,
+        "data_sensitivity": None,
+        "updated_by": None,
+        "updated_at": None,
+    }
+
+
+def _system_facts(system_id: str) -> dict[str, Any]:
+    """Collect what the database actually knows about a system.
+
+    A discovery-only system has no reviewed ACAP, so without this every Comply
+    signal reads as zero even when the system has ACAP versions, approved
+    capabilities and hundreds of governed actions. Facts supplement a reviewed
+    ACAP; they never override one.
+    """
+    facts: dict[str, Any] = {"system_id": system_id}
+    conn = db.connect()
+    try:
+        versions = db.list_acap_versions(conn, system_id)
+        facts["acap_version_count"] = len(versions)
+        if versions:
+            latest = versions[0]
+            facts["acap_version_id"] = latest.get("acap_version_id")
+            facts["acap_version_number"] = latest.get("version_number")
+
+        discovery = db.get_discovery(conn, system_id) or {}
+        capabilities = discovery.get("capabilities") or []
+        facts["capabilities"] = capabilities
+
+        statuses = Counter(str(c.get("review_status") or "pending") for c in capabilities)
+        facts["approved_count"] = statuses.get("approved_for_acap", 0) + statuses.get("edited", 0)
+        facts["denied_count"] = statuses.get("rejected", 0) + statuses.get("denied", 0)
+        facts["pending_count"] = statuses.get("pending", 0) + statuses.get("needs_reapproval", 0)
+        facts["review_status_counts"] = dict(statuses)
+
+        action_types = {
+            str(c.get("suggested_action_type"))
+            for c in capabilities
+            if c.get("suggested_action_type")
+        }
+        facts["action_types"] = sorted(action_types - {"unknown"})
+        facts["has_external_side_effect"] = any(
+            c.get("external_side_effect") for c in capabilities
+        ) or bool(action_types & SIDE_EFFECT_ACTION_TYPES)
+        facts["approval_required_count"] = sum(
+            1 for c in capabilities if c.get("suggested_approval_required")
+        )
+
+        summary = db.action_summary_counts(conn, system_id)
+        facts["action_count"] = int(summary.get("total") or 0)
+        facts["denied_action_count"] = int(summary.get("denied") or 0)
+        facts["blocked_action_count"] = int(summary.get("blocked") or 0)
+        switches = db.list_kill_switches(conn, system_id)
+        facts["kill_switch_count"] = len(switches)
+        facts["runtime_control_evidence"] = _runtime_control_evidence(
+            db.list_governed_actions(conn, system_id, limit=200), switches
+        )
+
+        # Environment is stamped on every governed action by the SDK.
+        recent = db.list_governed_actions(conn, system_id, limit=1)
+        if recent:
+            facts["environment"] = recent[0].get("environment")
+    except Exception:  # pragma: no cover - facts are best-effort enrichment
+        logger.warning("could not read system facts for %s", system_id, exc_info=True)
+    finally:
+        conn.close()
+    return facts
+
+
+def _comply_inputs(system_id: str) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
+    """Shared setup for every Comply endpoint: (acap, risk_profile, applicability)."""
+    acap, _system = _validate_system(system_id)
+    facts = _system_facts(system_id)
+    declared = _assessment_inputs(system_id)
+    profile = build_risk_profile(acap, facts, declared)
+    applicability = evaluate_framework_applicability(profile, acap, facts, declared)
+    return acap, profile, applicability
 
 
 def _validate_system(system_id: str) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -394,24 +575,19 @@ def get_coverage(system_id: str) -> dict[str, Any]:
 
 @app.get("/systems/{system_id}/risk-profile")
 def get_risk_profile(system_id: str) -> dict[str, Any]:
-    acap, system = _validate_system(system_id)
-    profile = build_risk_profile(acap)
+    _acap, profile, _applicability = _comply_inputs(system_id)
     return {"system_id": system_id, "risk_profile": profile}
 
 
 @app.get("/systems/{system_id}/framework-applicability")
 def get_framework_applicability(system_id: str) -> dict[str, Any]:
-    acap, system = _validate_system(system_id)
-    profile = build_risk_profile(acap)
-    frameworks = evaluate_framework_applicability(profile, acap)
+    _acap, _profile, frameworks = _comply_inputs(system_id)
     return {"system_id": system_id, "frameworks": frameworks}
 
 
 @app.get("/systems/{system_id}/assessment")
 def get_assessment(system_id: str) -> dict[str, Any]:
-    acap, system = _validate_system(system_id)
-    profile = build_risk_profile(acap)
-    applicability = evaluate_framework_applicability(profile, acap)
+    acap, profile, applicability = _comply_inputs(system_id)
     conn = db.connect()
     try:
         events = db.all_events_for_system(conn, system_id)
@@ -427,9 +603,7 @@ def get_assessment(system_id: str) -> dict[str, Any]:
 
 @app.post("/systems/{system_id}/assessments/run")
 def run_assessment(system_id: str) -> dict[str, Any]:
-    acap, system = _validate_system(system_id)
-    profile = build_risk_profile(acap)
-    applicability = evaluate_framework_applicability(profile, acap)
+    acap, profile, applicability = _comply_inputs(system_id)
     conn = db.connect()
     try:
         events = db.all_events_for_system(conn, system_id)
@@ -471,9 +645,7 @@ def get_assessment_by_id(assessment_id: str) -> dict[str, Any]:
 @app.get("/systems/{system_id}/assessment-report.md")
 def get_assessment_report(system_id: str):
     from starlette.responses import Response
-    acap, system = _validate_system(system_id)
-    profile = build_risk_profile(acap)
-    applicability = evaluate_framework_applicability(profile, acap)
+    acap, profile, applicability = _comply_inputs(system_id)
     conn = db.connect()
     try:
         events = db.all_events_for_system(conn, system_id)
@@ -1233,3 +1405,57 @@ def patch_enforcement_mode_endpoint(
         return _enforcement_mode_state(conn, system_id)
     finally:
         conn.close()
+
+
+VALID_JURISDICTIONS = {"EU", "US", "India"}
+VALID_SENSITIVITIES = {"low", "medium", "high"}
+
+
+@app.get("/systems/{system_id}/assessment-inputs")
+def get_assessment_inputs_endpoint(system_id: str) -> dict[str, Any]:
+    """Human-declared context used by the assessment.
+
+    Like the other Comply endpoints this does not call _validate_system: a
+    governed app may post actions before any discovery upload exists.
+    """
+    return _assessment_inputs(system_id)
+
+
+@app.put("/systems/{system_id}/assessment-inputs")
+def put_assessment_inputs_endpoint(
+    system_id: str, request: AssessmentInputsRequest
+) -> dict[str, Any]:
+    """Declare jurisdiction, use case, high-risk category and data sensitivity.
+
+    These supplement discovered facts. A reviewed ACAP still wins: this cannot
+    overwrite a human-reviewed purpose or jurisdiction.
+    """
+    jurisdiction = (request.jurisdiction or "").strip() or None
+    if jurisdiction and jurisdiction not in VALID_JURISDICTIONS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"jurisdiction must be one of {sorted(VALID_JURISDICTIONS)} or empty",
+        )
+    sensitivity = (request.data_sensitivity or "").strip().lower() or None
+    if sensitivity and sensitivity not in VALID_SENSITIVITIES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"data_sensitivity must be one of {sorted(VALID_SENSITIVITIES)} or empty",
+        )
+
+    conn = db.connect()
+    try:
+        db.set_assessment_inputs(
+            conn,
+            system_id,
+            {
+                "jurisdiction": jurisdiction,
+                "use_case": (request.use_case or "").strip() or None,
+                "high_risk_category": request.high_risk_category,
+                "data_sensitivity": sensitivity,
+            },
+            updated_by=request.updated_by,
+        )
+    finally:
+        conn.close()
+    return _assessment_inputs(system_id)

@@ -385,6 +385,23 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; line-height: 1.25; }
   flex-wrap: wrap;
   margin-bottom: 20px;
 }
+
+/* Groups a badge and an action button on the right of a card head. */
+.card-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.card-head-actions .btn-primary {
+  padding: 8px 16px;
+  font-size: 0.875rem;
+}
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .card-head h2 { font-size: 1.1875rem; }
 
 .card-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
@@ -913,4 +930,34 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; line-height: 1.25; }
   letter-spacing: 0.07em;
   color: var(--muted);
   margin-bottom: 12px;
+}
+
+
+/* Assessment Inputs card: declared context fields. */
+.inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.inputs-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+.inputs-grid label.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  color: var(--text);
+}
+.inputs-grid .checkbox-label input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
 }

@@ -318,6 +318,266 @@ class EvidenceApiTest(unittest.TestCase):
         self.assertNotIn("I want to order", text)
 
 
+
+    # ---- Facts-driven applicability for discovery-only systems ----
+
+    def _seed_discovery_only_system(self, system_id: str, capabilities: list[dict]) -> None:
+        """Register a system the way a scanner upload does -- no reviewed ACAP."""
+        discovery = {
+            "schema_version": "0.1",
+            "scanner_version": "0.1.0",
+            "source": "deterministic_scanner",
+            "project_hash": "sha256:test",
+            "scan_summary": {
+                "files_scanned": 1,
+                "functions_seen": len(capabilities),
+                "candidates_found": len(capabilities),
+                "model_surface_found": 0,
+                "high_risk_count": 0,
+                "medium_risk_count": 0,
+                "low_risk_count": len(capabilities),
+                "ignored_helpers_count": 0,
+            },
+            "candidates": [
+                {
+                    "capability_id": cap["capability_id"],
+                    "name": cap["name"],
+                    "module_path": f"app.{cap['name']}",
+                    "file_path": "app.py",
+                    "line_start": 1,
+                    "line_end": 2,
+                    "suggested_action_type": cap.get("action_type", "read"),
+                    "suggested_data_classes": [],
+                    "suggested_approval_required": False,
+                    "external_side_effect": cap.get("external_side_effect", False),
+                    "risk": "low",
+                    "confidence": 0.7,
+                    "confidence_source": "deterministic",
+                    "evidence": [],
+                    "call_chain": [],
+                    "review_status": "pending",
+                    "source": "deterministic_scanner",
+                }
+                for cap in capabilities
+            ],
+            "model_surface": [],
+        }
+        response = self.client.post(
+            "/discovery/upload", json={"system_id": system_id, "discovery": discovery}
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+
+    def test_acap_applicable_from_approved_capabilities_without_reviewed_acap(self):
+        """A discovery-only system with an approved boundary must not read as not_applicable."""
+        sid = "facts-acap-system"
+        self._seed_discovery_only_system(
+            sid,
+            [
+                {"capability_id": "CAP-facts01", "name": "get_live_flights"},
+                {"capability_id": "CAP-facts02", "name": "read_airports"},
+            ],
+        )
+        response = self.client.get(f"/systems/{sid}/framework-applicability")
+        frameworks = {f["framework"]: f for f in response.json()["frameworks"]}
+        # Discovered but unapproved: no authorization boundary exists yet.
+        self.assertFalse(frameworks["ACAP"]["applicable"])
+        # ...but tool/API behaviour was discovered, so OWASP Agentic applies.
+        self.assertTrue(frameworks["OWASP Agentic"]["applicable"])
+
+        self.client.post(f"/systems/{sid}/capabilities/CAP-facts01/approve")
+        response = self.client.get(f"/systems/{sid}/framework-applicability")
+        frameworks = {f["framework"]: f for f in response.json()["frameworks"]}
+        self.assertTrue(frameworks["ACAP"]["applicable"])
+        self.assertIn("approved", frameworks["ACAP"]["reason"].lower())
+
+    def test_applicability_entries_carry_explanations(self):
+        sid = "facts-explain-system"
+        self._seed_discovery_only_system(
+            sid, [{"capability_id": "CAP-exp01", "name": "run_query", "action_type": "execute"}]
+        )
+        self.client.post(f"/systems/{sid}/capabilities/CAP-exp01/approve")
+        frameworks = {
+            f["framework"]: f
+            for f in self.client.get(f"/systems/{sid}/framework-applicability").json()["frameworks"]
+        }
+
+        acap = frameworks["ACAP"]
+        self.assertTrue(acap["why"], "an applicable framework must say why")
+        self.assertTrue(acap["evidence"])
+        self.assertTrue(acap["would_change"])
+
+        eu = frameworks["EU AI Act"]
+        self.assertFalse(eu["applicable"])
+        self.assertTrue(eu["why_not"], "a non-applicable framework must say why not")
+        self.assertTrue(any("jurisdiction" in r.lower() for r in eu["why_not"]))
+
+    def test_risk_profile_derived_for_discovery_only_system(self):
+        sid = "skyquery-facts-test"
+        self._seed_discovery_only_system(
+            sid,
+            [{
+                "capability_id": "CAP-risk01",
+                "name": "execute_sql",
+                "action_type": "execute",
+                "external_side_effect": True,
+            }],
+        )
+        profile = self.client.get(f"/systems/{sid}/risk-profile").json()["risk_profile"]
+        self.assertIsNotNone(profile["use_case"])
+        self.assertEqual(profile["environment"], "local")
+        self.assertTrue(profile["external_side_effects"])
+
+    def test_assessment_framework_status_not_applicable_without_boundary(self):
+        """Guards the inverse: no ACAP and no approvals must still read not_applicable."""
+        sid = "facts-empty-system"
+        self._seed_discovery_only_system(sid, [])
+        assessment = self.client.post(f"/systems/{sid}/assessments/run").json()
+        statuses = {f["framework"]: f["status"] for f in assessment["framework_status"]}
+        self.assertEqual(statuses["ACAP"], "not_applicable")
+
+    def test_reviewed_acap_system_applicability_is_unchanged_by_facts(self):
+        """The six fixture systems must be unaffected by facts enrichment."""
+        frameworks = {
+            f["framework"]: f
+            for f in self.client.get(
+                "/systems/restaurant-agent/framework-applicability"
+            ).json()["frameworks"]
+        }
+        self.assertTrue(frameworks["ACAP"]["applicable"])
+        self.assertIn("reviewed ACAP", frameworks["ACAP"]["reason"])
+        self.assertIn("6 tools", frameworks["ACAP"]["reason"])
+        profile = self.client.get("/systems/restaurant-agent/risk-profile").json()["risk_profile"]
+        self.assertEqual(profile["use_case"], "Restaurant ordering assistant for local test use.")
+        self.assertEqual(profile["authority_level"], "delegated")
+        self.assertEqual(profile["human_approval_model"], "required_for_writes")
+
+
+    # ---- Assessment inputs / EU AI Act ----
+
+    def test_assessment_inputs_round_trip_and_validation(self):
+        sid = "inputs-system"
+        self._seed_discovery_only_system(sid, [])
+
+        empty = self.client.get(f"/systems/{sid}/assessment-inputs").json()
+        self.assertIsNone(empty["jurisdiction"])
+        self.assertFalse(empty["high_risk_category"])
+
+        saved = self.client.put(
+            f"/systems/{sid}/assessment-inputs",
+            json={
+                "jurisdiction": "EU",
+                "use_case": "Aviation data assistant",
+                "high_risk_category": True,
+                "data_sensitivity": "medium",
+            },
+        )
+        self.assertEqual(saved.status_code, 200, saved.text)
+        self.assertEqual(saved.json()["jurisdiction"], "EU")
+        self.assertTrue(saved.json()["high_risk_category"])
+
+        self.assertEqual(
+            self.client.put(f"/systems/{sid}/assessment-inputs",
+                            json={"jurisdiction": "Mars"}).status_code, 422)
+        self.assertEqual(
+            self.client.put(f"/systems/{sid}/assessment-inputs",
+                            json={"data_sensitivity": "spicy"}).status_code, 422)
+
+    def test_eu_ai_act_becomes_applicable_from_declared_inputs(self):
+        sid = "eu-inputs-system"
+        self._seed_discovery_only_system(
+            sid, [{"capability_id": "CAP-eu01", "name": "fetch_opensky_response"}]
+        )
+
+        def eu():
+            frameworks = self.client.get(
+                f"/systems/{sid}/framework-applicability"
+            ).json()["frameworks"]
+            return {f["framework"]: f for f in frameworks}["EU AI Act"]
+
+        self.assertFalse(eu()["applicable"])
+
+        self.client.put(
+            f"/systems/{sid}/assessment-inputs",
+            json={
+                "jurisdiction": "EU",
+                "use_case": "Aviation data assistant",
+                "high_risk_category": True,
+                "data_sensitivity": "medium",
+            },
+        )
+        entry = eu()
+        self.assertTrue(entry["applicable"])
+        self.assertIn("EU jurisdiction", entry["reason"])
+        self.assertTrue(any("high-risk" in w.lower() for w in entry["why"]))
+
+        assessment = self.client.post(f"/systems/{sid}/assessments/run").json()
+        statuses = {f["framework"]: f["status"] for f in assessment["framework_status"]}
+        self.assertEqual(statuses["EU AI Act"], "needs_review")
+        self.assertEqual(statuses["ACAP"], "not_applicable")  # nothing approved here
+
+    def test_jurisdiction_alone_does_not_make_eu_applicable(self):
+        """High-risk classification is required too -- jurisdiction is not enough."""
+        sid = "eu-partial-system"
+        self._seed_discovery_only_system(sid, [])
+        self.client.put(
+            f"/systems/{sid}/assessment-inputs", json={"jurisdiction": "EU"}
+        )
+        frameworks = {
+            f["framework"]: f
+            for f in self.client.get(f"/systems/{sid}/framework-applicability").json()["frameworks"]
+        }
+        self.assertFalse(frameworks["EU AI Act"]["applicable"])
+
+    def test_kill_switch_alone_never_makes_eu_applicable(self):
+        """Runtime controls are evidence inside a review, never a trigger for one."""
+        sid = "eu-killswitch-system"
+        self._seed_discovery_only_system(
+            sid, [{"capability_id": "CAP-ks01", "name": "fetch_opensky_response"}]
+        )
+        self.client.post(
+            f"/systems/{sid}/kill-switches",
+            json={
+                "kill_switch_id": "ks-opensky",
+                "target_capabilities": ["fetch_opensky_response"],
+                "enabled": True,
+            },
+        )
+        frameworks = {
+            f["framework"]: f
+            for f in self.client.get(f"/systems/{sid}/framework-applicability").json()["frameworks"]
+        }
+        self.assertFalse(frameworks["EU AI Act"]["applicable"])
+        self.assertEqual(frameworks["EU AI Act"].get("runtime_control_evidence", []), [])
+
+    def test_declared_inputs_populate_the_risk_profile(self):
+        sid = "inputs-risk-system"
+        self._seed_discovery_only_system(sid, [])
+        self.client.put(
+            f"/systems/{sid}/assessment-inputs",
+            json={
+                "jurisdiction": "India",
+                "use_case": "Healthcare",
+                "data_sensitivity": "high",
+            },
+        )
+        profile = self.client.get(f"/systems/{sid}/risk-profile").json()["risk_profile"]
+        self.assertEqual(profile["jurisdiction"], "India")
+        self.assertEqual(profile["use_case"], "Healthcare")
+        self.assertEqual(profile["data_sensitivity"], "high")
+
+    def test_declared_inputs_cannot_override_a_reviewed_acap(self):
+        """A reviewed ACAP's purpose must win over a declared use case."""
+        self.client.put(
+            "/systems/restaurant-agent/assessment-inputs",
+            json={"jurisdiction": "EU", "use_case": "Finance", "high_risk_category": True},
+        )
+        profile = self.client.get(
+            "/systems/restaurant-agent/risk-profile"
+        ).json()["risk_profile"]
+        self.assertEqual(
+            profile["use_case"], "Restaurant ordering assistant for local test use."
+        )
+
     # ---- Risk, applicability, assessment tests ----
 
     def test_risk_profile_for_restaurant_agent(self):

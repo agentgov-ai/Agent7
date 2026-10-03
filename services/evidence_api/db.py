@@ -206,6 +206,16 @@ def init_db(conn: sqlite3.Connection) -> None:
             updated_at TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS system_assessment_inputs (
+            system_id TEXT PRIMARY KEY,
+            jurisdiction TEXT,
+            use_case TEXT,
+            high_risk_category INTEGER NOT NULL DEFAULT 0,
+            data_sensitivity TEXT,
+            updated_by TEXT,
+            updated_at TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS system_enforcement_modes (
             system_id TEXT PRIMARY KEY,
             mode TEXT NOT NULL,
@@ -243,6 +253,7 @@ def reset_db(conn: sqlite3.Connection) -> None:
     conn.execute("DELETE FROM governed_actions")
     conn.execute("DELETE FROM kill_switches")
     conn.execute("DELETE FROM system_enforcement_modes")
+    conn.execute("DELETE FROM system_assessment_inputs")
     conn.execute("DELETE FROM acap_versions")
     conn.execute("DELETE FROM capability_reviews")
     conn.execute("DELETE FROM capabilities")
@@ -1476,3 +1487,72 @@ def latest_action_enforcement_mode(
         return None
     # Rows written before the column existed only recorded the enforced mode.
     return row["requested_enforcement_mode"] or row["enforcement_mode"]
+
+
+# ----------------------------------------------------------------------
+# Per-system assessment inputs
+#
+# Human-declared context the scanner cannot infer -- jurisdiction, use case,
+# high-risk classification, data sensitivity. These supplement discovered facts
+# and a reviewed ACAP; they never override a reviewed ACAP.
+# ----------------------------------------------------------------------
+
+
+def _assessment_inputs_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "system_id": row["system_id"],
+        "jurisdiction": row["jurisdiction"],
+        "use_case": row["use_case"],
+        "high_risk_category": bool(row["high_risk_category"]),
+        "data_sensitivity": row["data_sensitivity"],
+        "updated_by": row["updated_by"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def get_assessment_inputs(
+    conn: sqlite3.Connection, system_id: str
+) -> dict[str, Any] | None:
+    row = conn.execute(
+        "SELECT * FROM system_assessment_inputs WHERE system_id = ?",
+        (system_id,),
+    ).fetchone()
+    return _assessment_inputs_from_row(row) if row else None
+
+
+def set_assessment_inputs(
+    conn: sqlite3.Connection,
+    system_id: str,
+    inputs: dict[str, Any],
+    updated_by: str = "local_user",
+) -> dict[str, Any]:
+    """Create or replace the declared inputs for a system."""
+    conn.execute(
+        """
+        INSERT OR REPLACE INTO system_assessment_inputs (
+            system_id, jurisdiction, use_case, high_risk_category,
+            data_sensitivity, updated_by, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            system_id,
+            inputs.get("jurisdiction") or None,
+            inputs.get("use_case") or None,
+            int(bool(inputs.get("high_risk_category"))),
+            inputs.get("data_sensitivity") or None,
+            updated_by,
+            datetime.now(timezone.utc).isoformat(),
+        ),
+    )
+    conn.commit()
+    return get_assessment_inputs(conn, system_id) or {}
+
+
+def clear_assessment_inputs(conn: sqlite3.Connection, system_id: str) -> bool:
+    cursor = conn.execute(
+        "DELETE FROM system_assessment_inputs WHERE system_id = ?",
+        (system_id,),
+    )
+    conn.commit()
+    return cursor.rowcount > 0

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20261003" />
     <script>
       // Resolve the theme before first paint so the page never flashes.
       (function () {
@@ -127,6 +127,18 @@
             <div class="kpi-card" id="kpiControlsCard"><span class="kpi-label">Failed Controls</span><strong id="kpiControls" class="kpi-number">-</strong><div class="kpi-icon" id="kpiControlsIcon"></div></div>
             <div class="kpi-card" id="kpiConfidenceCard"><span class="kpi-label">Evidence Confidence</span><span id="kpiConfidence" class="kpi-value">-</span><div class="kpi-icon" id="kpiConfidenceIcon"></div></div>
           </section>
+
+          <div class="card" id="emergencyControlCard">
+            <div class="card-head">
+              <h2>Emergency Control</h2>
+              <span id="emergencyBadge" class="badge">-</span>
+            </div>
+            <p class="body-text muted" id="emergencyText">Loading kill switch state...</p>
+            <div class="form-actions">
+              <button type="button" data-action="emergency-stop-toggle" id="emergencyToggleBtn" class="btn-primary">Emergency Stop</button>
+            </div>
+            <p class="result-text" id="emergencyResult" style="display:none"></p>
+          </div>
 
           <div class="card-grid-2">
             <div class="card">
@@ -437,7 +449,59 @@ gov.instrument_from_config()</code></pre>
           </div>
 
           <div class="card">
-            <div class="card-head"><h2>Latest Assessment</h2><span id="overallStatusBadge" class="badge">-</span></div>
+            <div class="card-head">
+              <h2>Assessment Inputs</h2>
+              <span class="hint-text">Declared context the scanner cannot infer</span>
+            </div>
+            <p class="body-text muted">Jurisdiction, use case and risk classification are human decisions. They supplement discovered evidence and change which frameworks are in scope.</p>
+            <div class="inputs-grid">
+              <label>Jurisdiction
+                <select id="inputJurisdiction" class="form-input">
+                  <option value="">None</option>
+                  <option value="EU">EU</option>
+                  <option value="US">US</option>
+                  <option value="India">India</option>
+                </select>
+              </label>
+              <label>Use case
+                <select id="inputUseCase" class="form-input">
+                  <option value="">Not declared</option>
+                  <option value="SkyQuery governed data/query assistant">SkyQuery governed data/query assistant</option>
+                  <option value="Aviation data assistant">Aviation data assistant</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Demo">Demo</option>
+                </select>
+              </label>
+              <label>Data sensitivity
+                <select id="inputDataSensitivity" class="form-input">
+                  <option value="">Not declared</option>
+                  <option value="low">low</option>
+                  <option value="medium">medium</option>
+                  <option value="high">high</option>
+                </select>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="inputHighRisk" />
+                Treat as high-risk demo system
+              </label>
+            </div>
+            <div class="form-actions">
+              <button type="button" id="saveAssessmentInputsBtn" class="btn-primary">Save Inputs</button>
+              <button type="button" data-action="run-assessment" class="btn-secondary">Run Assessment</button>
+            </div>
+            <p class="result-text" id="assessmentInputsResult" style="display:none"></p>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Latest Assessment</h2>
+              <div class="card-head-actions">
+                <span id="overallStatusBadge" class="badge">-</span>
+                <button type="button" id="runAssessmentComplyBtn" data-action="run-assessment" class="btn-primary">Run Assessment</button>
+              </div>
+            </div>
+            <p class="result-text" id="runAssessmentResult" style="display:none"></p>
             <div id="assessmentContent">
               <dl class="meta-grid">
                 <div><dt>Assessment ID</dt><dd id="assessmentId">-</dd></div>
@@ -467,11 +531,25 @@ gov.instrument_from_config()</code></pre>
               </dl>
             </div>
             <div class="card">
-              <div class="card-head"><h2>Framework Applicability</h2></div>
+              <div class="card-head"><h2>Framework Applicability</h2><span class="hint-text">Select a row for detail</span></div>
               <div class="table-wrap">
                 <table class="gov-table" id="applicabilityTable"><thead><tr><th>Framework</th><th>Applicable</th><th>Reason</th></tr></thead><tbody id="applicabilityBody"></tbody></table>
               </div>
             </div>
+          </div>
+
+          <div class="card" id="frameworkDetailCard">
+            <div class="card-head">
+              <h2 id="frameworkDetailName">Framework Detail</h2>
+              <span id="frameworkDetailBadge" class="badge">-</span>
+            </div>
+            <p class="body-text muted" id="frameworkDetailReason">Select a framework above to see why it applies.</p>
+            <div class="card-grid-2 nested">
+              <div class="subsection"><h3 id="frameworkWhyHeading">Why it applies</h3><ul id="frameworkWhy" class="action-list"></ul></div>
+              <div class="subsection"><h3>Evidence used</h3><ul id="frameworkEvidence" class="action-list"></ul></div>
+            </div>
+            <div class="subsection" id="frameworkControlSection" style="display:none"><h3>Runtime control evidence</h3><ul id="frameworkControlEvidence" class="action-list"></ul></div>
+            <div class="subsection"><h3>What would change this</h3><ul id="frameworkWouldChange" class="action-list"></ul></div>
           </div>
         </div>
 
@@ -485,7 +563,7 @@ gov.instrument_from_config()</code></pre>
             <div class="card-head"><h2>Actions</h2></div>
             <div class="settings-actions">
               <button type="button" id="demoResetBtn" class="btn-secondary">Reset Demo</button>
-              <button type="button" id="runAssessmentBtn" class="btn-primary">Run Assessment</button>
+              <button type="button" id="runAssessmentBtn" data-action="run-assessment" class="btn-primary">Run Assessment</button>
               <button type="button" id="exportReportBtn" class="btn-secondary">Export Report</button>
             </div>
           </div>
@@ -510,6 +588,6 @@ gov.instrument_from_config()</code></pre>
       </div>
     </div>
 
-    <script src="./app.js"></script>
+    <script src="./app.js?v=20261003"></script>
   </body>
 </html>

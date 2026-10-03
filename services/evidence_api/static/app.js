@@ -22,6 +22,8 @@ const state = {
   actionDetails: {},
   killSwitches: [],
   enforcementMode: null,
+  selectedFramework: null,
+  assessmentInputs: null,
   selectedActionId: null,
   activeTab: "overview",
 };
@@ -132,6 +134,145 @@ function friendlyLevel(raw) {
     fully_autonomous: "Fully Autonomous",
   };
   return map[raw] || raw;
+}
+
+const EMERGENCY_TOGGLE_SELECTOR = '[data-action="emergency-stop-toggle"]';
+
+// Guards a double-click from firing two opposite bulk toggles at once.
+let emergencyToggleInFlight = false;
+
+function killSwitchSummary() {
+  const switches = Array.isArray(state.killSwitches) ? state.killSwitches : [];
+  const active = switches.filter((sw) => sw.enabled).length;
+  return { switches, total: switches.length, active, allEnabled: switches.length > 0 && active === switches.length };
+}
+
+function renderEmergencyControl() {
+  const badge = byId("emergencyBadge");
+  const text = byId("emergencyText");
+  const btn = byId("emergencyToggleBtn");
+  if (!badge || !text || !btn) return;
+  if (emergencyToggleInFlight) return;
+
+  const { total, active, allEnabled } = killSwitchSummary();
+
+  if (total === 0) {
+    badge.className = "badge";
+    badge.textContent = "No kill switches";
+    text.textContent = "No kill switches configured for this system.";
+    btn.textContent = "Emergency Stop";
+    btn.className = "btn-primary";
+    btn.disabled = true;
+    return;
+  }
+
+  btn.disabled = false;
+  if (allEnabled) {
+    badge.className = "badge danger";
+    badge.textContent = "Emergency Stop Active";
+    text.textContent =
+      "All kill switches are active. Governed actions matching those switches will be denied.";
+    btn.textContent = "Resume Operations";
+    btn.className = "btn-secondary";
+    return;
+  }
+
+  badge.className = "badge";
+  badge.textContent = "Ready";
+  text.textContent = active > 0
+    ? `Some kill switches are already active (${active} of ${total}). Emergency Stop will enable all.`
+    : "Enable all kill switches for this system.";
+  btn.textContent = "Emergency Stop";
+  btn.className = "btn-primary";
+}
+
+async function patchKillSwitchEnabled(systemId, killSwitchId, enabled) {
+  const response = await fetch(
+    endpoint(
+      `/systems/${encodeURIComponent(systemId)}/kill-switches/${encodeURIComponent(killSwitchId)}`,
+    ),
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    },
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(`${killSwitchId}: ${err.detail || response.status}`);
+  }
+  return response.json().catch(() => ({}));
+}
+
+async function toggleEmergencyStop() {
+  const sid = state.selectedSystemId;
+  const btn = byId("emergencyToggleBtn");
+  const text = byId("emergencyText");
+  const result = byId("emergencyResult");
+
+  const say = (message, ok) => {
+    if (!result) return;
+    result.textContent = message;
+    result.className = `result-text ${ok ? "wf-success" : "wf-error"}`;
+    result.style.display = "";
+  };
+
+  if (!sid) {
+    say("Select a system first.", false);
+    return;
+  }
+  if (emergencyToggleInFlight) return;
+
+  // Decide direction from current state before anything mutates.
+  const { switches, total, allEnabled } = killSwitchSummary();
+  if (total === 0) {
+    say("No kill switches configured for this system.", false);
+    return;
+  }
+  const enabling = !allEnabled;
+
+  emergencyToggleInFlight = true;
+  if (btn) btn.disabled = true;
+  if (text) text.textContent = enabling ? "Stopping\u2026" : "Resuming\u2026";
+  if (result) result.style.display = "none";
+
+  try {
+    // allSettled, not all: one failing switch must not leave the rest untouched.
+    const outcomes = await Promise.allSettled(
+      switches.map((sw) => patchKillSwitchEnabled(sid, sw.kill_switch_id, enabling)),
+    );
+    const failures = outcomes.filter((o) => o.status === "rejected");
+
+    emergencyToggleInFlight = false;
+    await loadGovernedActions(sid);
+    renderEmergencyControl();
+    renderGovernedActions();
+    renderKillSwitches();
+
+    if (failures.length) {
+      for (const f of failures) console.error("Emergency control: kill switch update failed", f.reason);
+      say(
+        `${failures.length} of ${total} kill switches could not be updated: ` +
+          failures.map((f) => f.reason.message || f.reason).join("; "),
+        false,
+      );
+      return;
+    }
+    say(
+      enabling
+        ? "Emergency Stop enabled: all kill switches are active."
+        : "Operations resumed: all kill switches are inactive.",
+      true,
+    );
+  } catch (err) {
+    console.error("Emergency control failed", err);
+    say(`Emergency control failed: ${err.message || err}`, false);
+  } finally {
+    // Never leave the control stuck: clear the flag and re-render from state.
+    emergencyToggleInFlight = false;
+    if (btn) btn.disabled = false;
+    renderEmergencyControl();
+  }
 }
 
 function renderKpiStrip() {
@@ -651,8 +792,18 @@ function renderApplicability() {
     body.appendChild(row);
     return;
   }
+  const known = frameworks.map((f) => f.framework);
+  if (!known.includes(state.selectedFramework)) state.selectedFramework = null;
+
   for (const entry of frameworks) {
     const row = document.createElement("tr");
+    if (entry.framework === state.selectedFramework) row.className = "selected";
+    row.style.cursor = "pointer";
+    row.addEventListener("click", () => {
+      state.selectedFramework = entry.framework;
+      renderApplicability();
+      renderFrameworkDetail();
+    });
 
     const nameCell = document.createElement("td");
     nameCell.textContent = safeDisplay(entry.framework);
@@ -670,6 +821,148 @@ function renderApplicability() {
 
     row.append(nameCell, badgeCell, reasonCell);
     body.appendChild(row);
+  }
+}
+
+function renderAssessmentInputs() {
+  const inputs = state.assessmentInputs;
+  const jurisdiction = byId("inputJurisdiction");
+  if (!jurisdiction) return;
+  jurisdiction.value = (inputs && inputs.jurisdiction) || "";
+  byId("inputUseCase").value = (inputs && inputs.use_case) || "";
+  byId("inputDataSensitivity").value = (inputs && inputs.data_sensitivity) || "";
+  byId("inputHighRisk").checked = Boolean(inputs && inputs.high_risk_category);
+}
+
+async function saveAssessmentInputs() {
+  const sid = state.selectedSystemId;
+  const result = byId("assessmentInputsResult");
+  const btn = byId("saveAssessmentInputsBtn");
+  const say = (message, ok) => {
+    if (!result) return;
+    result.textContent = message;
+    result.className = `result-text ${ok ? "wf-success" : "wf-error"}`;
+    result.style.display = "";
+  };
+  if (!sid) {
+    say("Select a system before saving inputs.", false);
+    return;
+  }
+
+  const payload = {
+    jurisdiction: byId("inputJurisdiction").value || null,
+    use_case: byId("inputUseCase").value || null,
+    data_sensitivity: byId("inputDataSensitivity").value || null,
+    high_risk_category: byId("inputHighRisk").checked,
+    updated_by: "local_user",
+  };
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Saving\u2026";
+  }
+  try {
+    const response = await fetch(
+      endpoint(`/systems/${encodeURIComponent(sid)}/assessment-inputs`),
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      console.error("Save assessment inputs failed", response.status, err);
+      say(`Could not save inputs: ${err.detail || response.status}`, false);
+      return;
+    }
+    state.assessmentInputs = await response.json();
+    renderAssessmentInputs();
+    say("Inputs saved. Click Run Assessment to apply them.", true);
+  } catch (err) {
+    console.error("Save assessment inputs failed", err);
+    say(`Could not save inputs: ${err.message || err}`, false);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Save Inputs";
+    }
+  }
+}
+
+function selectedFrameworkEntry() {
+  const frameworks = (state.applicability && state.applicability.frameworks) || [];
+  if (!state.selectedFramework) return null;
+  return frameworks.find((f) => f.framework === state.selectedFramework) || null;
+}
+
+function fillList(elementId, items, emptyText) {
+  const list = byId(elementId);
+  if (!list) return;
+  clear(list);
+  const values = Array.isArray(items) ? items.filter(Boolean) : [];
+  if (values.length === 0) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = emptyText;
+    list.appendChild(li);
+    return;
+  }
+  for (const item of values) {
+    const li = document.createElement("li");
+    li.textContent = typeof item === "string" ? item : safeDisplay(item);
+    list.appendChild(li);
+  }
+}
+
+function renderFrameworkDetail() {
+  const entry = selectedFrameworkEntry();
+  const badge = byId("frameworkDetailBadge");
+  if (!badge) return;
+
+  if (!entry) {
+    setText("frameworkDetailName", "Framework Detail");
+    badge.className = "badge";
+    badge.textContent = "-";
+    setText("frameworkDetailReason", "Select a framework above to see why it applies.");
+    setText("frameworkWhyHeading", "Why it applies");
+    fillList("frameworkWhy", [], "No framework selected.");
+    fillList("frameworkEvidence", [], "No framework selected.");
+    fillList("frameworkWouldChange", [], "No framework selected.");
+    const emptyControls = byId("frameworkControlSection");
+    if (emptyControls) emptyControls.style.display = "none";
+    return;
+  }
+
+  setText("frameworkDetailName", safeDisplay(entry.framework));
+  badge.className = applicableBadgeClass(entry.applicable);
+  badge.textContent = applicableLabel(entry.applicable);
+  setText("frameworkDetailReason", safeDisplay(entry.reason));
+
+  // Show the reasons that actually explain the verdict: supporting points when
+  // it applies, blocking points when it does not.
+  const applies = entry.applicable !== false && entry.applicable !== "false";
+  const reasons = applies ? entry.why : entry.why_not;
+  setText("frameworkWhyHeading", applies ? "Why it applies" : "Why it does not apply");
+  fillList(
+    "frameworkWhy",
+    reasons,
+    applies ? "No supporting detail recorded." : "No blocking detail recorded.",
+  );
+
+  const evidence = (entry.evidence || []).map((item) =>
+    item && typeof item === "object" ? `${item.label}: ${safeDisplay(item.value)}` : item,
+  );
+  fillList("frameworkEvidence", evidence, "No evidence recorded.");
+  fillList("frameworkWouldChange", entry.would_change, "Nothing recorded.");
+
+  // Runtime controls are evidence inside an applicable review, never a reason
+  // the framework applies -- so only show the section when it has content.
+  const controlSection = byId("frameworkControlSection");
+  const controls = entry.runtime_control_evidence || [];
+  if (controlSection) {
+    controlSection.style.display = controls.length ? "" : "none";
+    fillList("frameworkControlEvidence", controls, "No runtime control evidence.");
   }
 }
 
@@ -692,8 +985,17 @@ function renderLatestAssessment() {
     setText("assessmentTime", "-");
     setText("assessmentConfidence", "-");
     setText("assessmentControls", "-");
-    clear(byId("frameworkStatusBody"));
-    clear(byId("recommendedActions"));
+    // Empty framework table reads as broken; say what to do instead.
+    fillList("recommendedActions", [], "No assessment yet. Click Run Assessment.");
+    const emptyBody = byId("frameworkStatusBody");
+    clear(emptyBody);
+    const emptyRow = document.createElement("tr");
+    const emptyCell = document.createElement("td");
+    emptyCell.colSpan = 2;
+    emptyCell.className = "empty";
+    emptyCell.textContent = "No assessment yet. Click Run Assessment.";
+    emptyRow.appendChild(emptyCell);
+    emptyBody.appendChild(emptyRow);
     return;
   }
   badge.className = statusBadgeClass(a.overall_status);
@@ -738,17 +1040,67 @@ function renderLatestAssessment() {
   }
 }
 
+const RUN_ASSESSMENT_SELECTOR =
+  '[data-action="run-assessment"], #runAssessmentBtn, #runAssessmentComplyBtn';
+
+let assessmentRunInFlight = false;
+
 async function runAssessment() {
   const sid = state.selectedSystemId;
-  if (!sid) return;
+  const result = byId("runAssessmentResult");
+  const runButtons = () => [...document.querySelectorAll(RUN_ASSESSMENT_SELECTOR)];
+
+  const say = (message, ok) => {
+    if (!result) return;
+    result.textContent = message;
+    result.className = `result-text ${ok ? "wf-success" : "wf-error"}`;
+    result.style.display = "";
+  };
+
+  if (!sid) {
+    say("Select a system before running an assessment.", false);
+    return;
+  }
+
+  assessmentRunInFlight = true;
+  for (const b of runButtons()) {
+    b.disabled = true;
+    b.textContent = "Running\u2026";
+  }
+  if (result) result.style.display = "none";
+
   try {
-    await fetch(endpoint(`/systems/${encodeURIComponent(sid)}/assessments/run`), {
-      method: "POST",
-      headers: { Accept: "application/json" },
-    });
+    const response = await fetch(
+      endpoint(`/systems/${encodeURIComponent(sid)}/assessments/run`),
+      { method: "POST", headers: { Accept: "application/json" } },
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      console.error("Run Assessment failed", response.status, err);
+      say(`Assessment run failed: ${err.detail || response.status}`, false);
+      return;
+    }
+    const assessment = await response.json().catch(() => ({}));
     await loadEvidenceView();
+    say(
+      `Assessment ${assessment.assessment_id || ""} completed (${assessment.overall_status || "done"}).`.trim(),
+      true,
+    );
   } catch (err) {
-    renderError(`Assessment run failed: ${err.message}`);
+    console.error("Run Assessment failed", err);
+    say(`Assessment run failed: ${err.message || err}`, false);
+  } finally {
+    assessmentRunInFlight = false;
+    // Re-query rather than reuse references: a re-render during the request
+    // would otherwise leave the live buttons stuck disabled.
+    resetRunAssessmentButtons();
+  }
+}
+
+function resetRunAssessmentButtons() {
+  for (const b of document.querySelectorAll(RUN_ASSESSMENT_SELECTOR)) {
+    b.disabled = false;
+    b.textContent = "Run Assessment";
   }
 }
 
@@ -766,6 +1118,7 @@ async function demoReset() {
 
 function render() {
   renderKpiStrip();
+  renderEmergencyControl();
   renderSystem();
   renderAcapReview();
   renderWorkflowStatus();
@@ -773,7 +1126,10 @@ function render() {
   renderDiscovery();
   renderCoverage();
   renderRiskProfile();
+  renderAssessmentInputs();
   renderApplicability();
+  renderFrameworkDetail();
+  if (!assessmentRunInFlight) resetRunAssessmentButtons();
   renderLatestAssessment();
   renderGovernedActions();
   renderKillSwitches();
@@ -848,6 +1204,11 @@ async function loadEvidenceView() {
           readJson(`/systems/${enc}/framework-applicability`),
         ]);
       } catch (_) { /* optional endpoints; continue with null */ }
+      try {
+        state.assessmentInputs = await readJson(`/systems/${enc}/assessment-inputs`);
+      } catch (_) {
+        state.assessmentInputs = null;
+      }
     }
 
     let discoveryPayload = null;
@@ -1430,7 +1791,22 @@ async function runAcapRules() {
 }
 
 function initEventListeners() {
-  byId("runAssessmentBtn").addEventListener("click", runAssessment);
+  // Delegated on the document so it works no matter when a Run Assessment
+  // button is rendered, and survives any re-render of its container.
+  document.addEventListener("click", (event) => {
+    const target = event.target.closest(RUN_ASSESSMENT_SELECTOR);
+    if (!target || target.disabled) return;
+    runAssessment();
+  });
+
+  document.addEventListener("click", (event) => {
+    const target = event.target.closest(EMERGENCY_TOGGLE_SELECTOR);
+    if (!target || target.disabled) return;
+    toggleEmergencyStop();
+  });
+
+  const saveInputsBtn = byId("saveAssessmentInputsBtn");
+  if (saveInputsBtn) saveInputsBtn.addEventListener("click", saveAssessmentInputs);
   byId("demoResetBtn").addEventListener("click", demoReset);
   byId("exportReportBtn").addEventListener("click", exportReport);
   byId("systemSelector").addEventListener("change", (e) => {
